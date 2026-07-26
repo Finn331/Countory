@@ -4,6 +4,9 @@
   "description": "Inventory Management System dengan Computer Vision",
   "main": "src/app.js",
   "type": "module",
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
