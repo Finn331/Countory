@@ -1,16 +1,360 @@
 <div class="space-y-6">
-  <div>
-    <h1 class="text-2xl font-bold text-slate-900">Stock Opname</h1>
-    <p class="text-slate-600">OPname stok menggunakan kamera</p>
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Stock Opname</h1>
+      <p class="text-slate-600">Audit dan penyesuaian stok gudang dengan hasil penghitungan fisik</p>
+    </div>
+    <button onclick="openModal('addOpname')" class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary-500 to-accent-500 text-white font-semibold rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-xl transition-all">
+      <i data-lucide="plus" class="w-5 h-5"></i>
+      Buat Opname Baru
+    </button>
   </div>
 
-  <div class="bg-white rounded-xl border border-slate-100 p-8 text-center">
-    <i data-lucide="clipboard-check" class="w-16 h-16 text-slate-300 mx-auto mb-4"></i>
-    <h2 class="text-xl font-bold text-slate-900 mb-2">Coming Soon</h2>
-    <p class="text-slate-600 max-w-md mx-auto">Fitur Stock Opname dengan kamera akan segera tersedia. Anda dapat menggunakan halaman Scan untuk melakukan pencatatan stok saat ini.</p>
-    <a href="/dashboard/scan" class="inline-flex items-center gap-2 px-6 py-3 bg-primary-500 text-white font-semibold rounded-xl hover:bg-primary-600 transition-colors mt-6">
-      <i data-lucide="scan" class="w-5 h-5"></i>
-      Buka Scan
-    </a>
+  <!-- Filters -->
+  <div class="bg-white rounded-xl border border-slate-100 p-4">
+    <div class="flex flex-col sm:flex-row gap-4">
+      <select id="warehouseFilter" class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500" onchange="loadOpnames(1)">
+        <option value="">Semua Gudang</option>
+      </select>
+      <select id="statusFilter" class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500" onchange="loadOpnames(1)">
+        <option value="">Semua Status</option>
+        <option value="draft">Draft</option>
+        <option value="in_progress">In Progress</option>
+        <option value="submitted">Submitted</option>
+        <option value="approved">Approved</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Opnames Grid / Table -->
+  <div id="opnamesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="col-span-full bg-white rounded-xl border border-slate-100 p-12 text-center">
+      <div class="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p class="text-slate-500">Memuat data stock opname...</p>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div id="pagination" class="hidden px-6 py-4 bg-white rounded-xl border border-slate-100 items-center justify-between">
+    <p class="text-sm text-slate-600">Menampilkan <span id="showingCount">0</span> dari <span id="totalCount">0</span> sesi opname</p>
+    <div class="flex gap-2" id="paginationButtons"></div>
   </div>
 </div>
+
+<!-- Add Opname Modal -->
+<div id="addOpnameModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-md animate-scale-in">
+    <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+      <h2 class="text-xl font-bold text-slate-900">Buat Stock Opname</h2>
+      <button onclick="closeModal('addOpname')" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <form id="addOpnameForm" class="p-6 space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Gudang *</label>
+        <select name="warehouseId" id="modalWarehouseSelect" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500">
+          <option value="">Pilih Gudang...</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Nama Sesi Opname *</label>
+        <input type="text" name="name" required placeholder="Misal: Opname Bulanan Juli 2026" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Catatan</label>
+        <textarea name="notes" rows="2" placeholder="Catatan tambahan (opsional)" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"></textarea>
+      </div>
+      <div class="flex gap-3 pt-4">
+        <button type="button" onclick="closeModal('addOpname')" class="flex-1 px-4 py-2 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors">Batal</button>
+        <button type="submit" class="flex-1 px-4 py-2 bg-primary-500 text-white font-medium rounded-lg hover:bg-primary-600 transition-colors">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Opname Detail / Count Modal -->
+<div id="detailOpnameModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col animate-scale-in">
+    <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+      <div>
+        <h2 class="text-xl font-bold text-slate-900" id="detailOpnameTitle">Detail Stock Opname</h2>
+        <p class="text-xs text-slate-500" id="detailOpnameSubtitle">Gudang</p>
+      </div>
+      <button onclick="closeModal('detailOpname')" class="p-2 hover:bg-slate-200 rounded-lg transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <div class="p-6 overflow-y-auto space-y-6 flex-1">
+      <!-- Form Input Item -->
+      <form id="addItemForm" class="bg-primary-50/50 p-4 rounded-2xl border border-primary-100 space-y-4">
+        <input type="hidden" id="activeOpnameId" name="opnameId">
+        <h3 class="font-bold text-sm text-primary-900 flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-4 h-4 text-primary-600"></i>
+          Catat / Hitung Item Produk
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Produk *</label>
+            <select name="productId" id="opnameProductSelect" required class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500">
+              <option value="">Pilih Produk...</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Jumlah Fisik (Detected) *</label>
+            <input type="number" name="detectedQuantity" min="0" required placeholder="0" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-700 mb-1">Alasan Selisih (Jika ada)</label>
+          <input type="text" name="reason" placeholder="Misal: 2 unit rusak / hilang" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500">
+        </div>
+        <div class="flex justify-end gap-2">
+          <a href="/dashboard/scan" class="inline-flex items-center gap-1 text-xs px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
+            <i data-lucide="camera" class="w-3.5 h-3.5"></i> Gunakan Kamera Scan
+          </a>
+          <button type="submit" class="px-4 py-2 bg-primary-500 text-white text-xs font-semibold rounded-lg hover:bg-primary-600 transition-colors shadow">
+            Simpan Item
+          </button>
+        </div>
+      </form>
+
+      <!-- Status Info -->
+      <div id="opnameStatusInfo" class="text-xs text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+        <span>Status saat ini: <strong id="currentOpnameStatusBadge" class="uppercase">DRAFT</strong></span>
+        <div id="opnameActionButtons" class="flex gap-2"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentPage = 1;
+let warehousesList = [];
+let productsList = [];
+
+async function init() {
+  await Promise.all([loadWarehouses(), loadProducts()]);
+  loadOpnames(1);
+}
+
+async function loadWarehouses() {
+  try {
+    const res = await api.get('/api/warehouses');
+    warehousesList = res.warehouses || [];
+    const opts = warehousesList.map(w => `<option value="${w.id}">${w.name} (${w.code})</option>`).join('');
+    document.getElementById('warehouseFilter').innerHTML = '<option value="">Semua Gudang</option>' + opts;
+    document.getElementById('modalWarehouseSelect').innerHTML = '<option value="">Pilih Gudang...</option>' + opts;
+  } catch (err) {
+    console.error('Failed to load warehouses:', err);
+  }
+}
+
+async function loadProducts() {
+  try {
+    const res = await api.get('/api/products?limit=100');
+    productsList = res.products || [];
+    const opts = productsList.map(p => `<option value="${p.id}">${p.name} (${p.sku})</option>`).join('');
+    document.getElementById('opnameProductSelect').innerHTML = '<option value="">Pilih Produk...</option>' + opts;
+  } catch (err) {
+    console.error('Failed to load products:', err);
+  }
+}
+
+async function loadOpnames(page = 1) {
+  currentPage = page;
+  const warehouseId = document.getElementById('warehouseFilter')?.value || '';
+  const status = document.getElementById('statusFilter')?.value || '';
+  
+  const params = new URLSearchParams({ page, limit: 12 });
+  if (warehouseId) params.append('warehouseId', warehouseId);
+  if (status) params.append('status', status);
+
+  try {
+    const res = await api.get(`/api/stock-opnames?${params}`);
+    renderOpnames(res.opnames || []);
+    renderPagination(res.pagination || {});
+  } catch (err) {
+    showToast('Gagal memuat data stock opname', 'error');
+  }
+}
+
+function getStatusBadgeHtml(status) {
+  const map = {
+    draft: '<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-700">DRAFT</span>',
+    in_progress: '<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 animate-pulse">IN PROGRESS</span>',
+    submitted: '<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">SUBMITTED</span>',
+    approved: '<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">APPROVED</span>',
+    rejected: '<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">REJECTED</span>'
+  };
+  return map[status] || `<span class="px-2 py-1 text-xs font-semibold rounded bg-slate-100">${status}</span>`;
+}
+
+function renderOpnames(opnames) {
+  const grid = document.getElementById('opnamesGrid');
+  if (!opnames.length) {
+    grid.innerHTML = `
+      <div class="col-span-full bg-white rounded-2xl border border-slate-100 p-12 text-center">
+        <i data-lucide="clipboard-check" class="w-16 h-16 text-slate-300 mx-auto mb-4"></i>
+        <h3 class="text-lg font-bold text-slate-700 mb-1">Belum Ada Sesi Stock Opname</h3>
+        <p class="text-sm text-slate-500 max-w-md mx-auto mb-6">Mulai lakukan audit fisik inventaris dengan membuat sesi opname baru sekarang.</p>
+        <button onclick="openModal('addOpname')" class="px-6 py-2.5 bg-primary-500 text-white text-sm font-semibold rounded-xl hover:bg-primary-600 transition-colors">Buat Opname</button>
+      </div>`;
+    lucide.createIcons();
+    return;
+  }
+
+  grid.innerHTML = opnames.map(o => `
+    <div class="gsap-reveal bg-white rounded-2xl border border-slate-100 p-6 card-hover flex flex-col justify-between space-y-4">
+      <div>
+        <div class="flex items-start justify-between gap-2 mb-3">
+          ${getStatusBadgeHtml(o.status)}
+          <span class="text-xs text-slate-400 font-mono">${new Date(o.createdAt).toLocaleDateString('id-ID')}</span>
+        </div>
+        <h3 class="font-bold text-lg text-slate-900 line-clamp-1">${o.name}</h3>
+        <p class="text-xs text-primary-600 font-medium mt-0.5"><i data-lucide="warehouse" class="w-3.5 h-3.5 inline mr-1"></i>${o.warehouse?.name || 'Gudang'}</p>
+        ${o.notes ? `<p class="text-xs text-slate-500 mt-2 bg-slate-50 p-2 rounded-lg line-clamp-2">${o.notes}</p>` : ''}
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+        <span class="text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">${o.itemCount || 0} Item Tercatat</span>
+        <div class="flex items-center gap-2">
+          <button onclick="openDetailOpname(${o.id}, '${o.name}', '${o.warehouse?.name}', '${o.status}')" class="px-3 py-1.5 bg-primary-50 text-primary-600 hover:bg-primary-500 hover:text-white rounded-lg text-xs font-semibold transition-all">
+            Hitung / Detail
+          </button>
+          ${o.status !== 'approved' ? `
+            <button onclick="deleteOpname(${o.id})" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus Sesi">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+  lucide.createIcons();
+}
+
+function renderPagination(pagination) {
+  const pag = document.getElementById('pagination');
+  if (!pagination.total) {
+    pag.classList.add('hidden');
+    return;
+  }
+  pag.classList.remove('hidden');
+  pag.classList.add('flex');
+  document.getElementById('showingCount').textContent = Math.min(pagination.page * pagination.limit, pagination.total);
+  document.getElementById('totalCount').textContent = pagination.total;
+
+  const container = document.getElementById('paginationButtons');
+  let html = '';
+  for (let i = 1; i <= (pagination.pages || 1); i++) {
+    html += `<button onclick="loadOpnames(${i})" class="px-3 py-1 text-sm rounded-lg ${i === pagination.page ? 'bg-primary-500 text-white font-bold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${i}</button>`;
+  }
+  container.innerHTML = html;
+}
+
+function openModal(type) {
+  document.getElementById(`${type}Modal`).classList.remove('hidden');
+  document.getElementById(`${type}Modal`).classList.add('flex');
+}
+
+function closeModal(type) {
+  document.getElementById(`${type}Modal`).classList.add('hidden');
+  document.getElementById(`${type}Modal`).classList.remove('flex');
+}
+
+function openDetailOpname(id, name, warehouseName, status) {
+  document.getElementById('activeOpnameId').value = id;
+  document.getElementById('detailOpnameTitle').textContent = name;
+  document.getElementById('detailOpnameSubtitle').textContent = `Gudang: ${warehouseName}`;
+  document.getElementById('currentOpnameStatusBadge').textContent = status.toUpperCase();
+  
+  const actionsContainer = document.getElementById('opnameActionButtons');
+  actionsContainer.innerHTML = '';
+  
+  if (status === 'draft' || status === 'in_progress') {
+    actionsContainer.innerHTML = `
+      <button type="button" onclick="submitOpname(${id})" class="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg transition-colors">
+        Submit Laporan
+      </button>`;
+  } else if (status === 'submitted') {
+    actionsContainer.innerHTML = `
+      <button type="button" onclick="approveOpname(${id})" class="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors">
+        Setujui (Approve & Sesuaikan Stok)
+      </button>`;
+  } else {
+    actionsContainer.innerHTML = `<span class="text-green-600 font-bold">Selesai (Stok Sudah Disesuaikan)</span>`;
+  }
+  
+  openModal('detailOpname');
+}
+
+document.getElementById('addOpnameForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const data = Object.fromEntries(formData);
+  try {
+    await api.post('/api/stock-opnames', data);
+    showToast('Sesi stock opname berhasil dibuat', 'success');
+    closeModal('addOpname');
+    e.target.reset();
+    loadOpnames(1);
+  } catch (err) {
+    showToast(err.message || 'Gagal membuat sesi opname', 'error');
+  }
+});
+
+document.getElementById('addItemForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const data = Object.fromEntries(formData);
+  const opnameId = data.opnameId;
+  try {
+    await api.post(`/api/stock-opnames/${opnameId}/items`, data);
+    showToast('Item berhasil dicatat ke sesi opname', 'success');
+    e.target.reset();
+    document.getElementById('activeOpnameId').value = opnameId; // keep id
+    loadOpnames(currentPage);
+  } catch (err) {
+    showToast(err.message || 'Gagal mencatat item opname', 'error');
+  }
+});
+
+async function submitOpname(id) {
+  if (!confirm('Submit laporan opname untuk pemeriksaan?')) return;
+  try {
+    await api.post(`/api/stock-opnames/${id}/submit`);
+    showToast('Stock opname disubmit!', 'success');
+    closeModal('detailOpname');
+    loadOpnames(currentPage);
+  } catch (err) {
+    showToast(err.message || 'Gagal submit', 'error');
+  }
+}
+
+async function approveOpname(id) {
+  if (!confirm('Setujui hasil opname ini dan sesuaikan stok gudang secara otomatis?')) return;
+  try {
+    await api.post(`/api/stock-opnames/${id}/approve`);
+    showToast('Stock opname disetujui & stok berhasil disesuaikan!', 'success');
+    closeModal('detailOpname');
+    loadOpnames(currentPage);
+  } catch (err) {
+    showToast(err.message || 'Gagal approve', 'error');
+  }
+}
+
+async function deleteOpname(id) {
+  if (!confirm('Hapus sesi stock opname ini?')) return;
+  try {
+    await api.delete(`/api/stock-opnames/${id}`);
+    showToast('Sesi opname dihapus', 'success');
+    loadOpnames(currentPage);
+  } catch (err) {
+    showToast(err.message || 'Gagal menghapus', 'error');
+  }
+}
+
+init();
+</script>

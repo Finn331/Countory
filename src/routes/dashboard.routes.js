@@ -50,6 +50,15 @@ router.get('/scan', (req, res) => {
   });
 });
 
+// Calibration
+router.get('/calibration', (req, res) => {
+  res.render('pages/scan/calibration', {
+    title: 'Kalibrasi Deteksi AI - Countory',
+    layout: 'layouts/dashboard',
+    user: req.user,
+  });
+});
+
 // Stock In
 router.get('/stock-in', (req, res) => {
   res.render('pages/inventory/stock-in', {
@@ -108,6 +117,24 @@ router.get('/notifications', (req, res) => {
 router.get('/settings', (req, res) => {
   res.render('pages/admin/settings', {
     title: 'Pengaturan - Countory',
+    layout: 'layouts/dashboard',
+    user: req.user,
+  });
+});
+
+// Users
+router.get('/users', (req, res) => {
+  res.render('pages/admin/users', {
+    title: 'Manajemen Pengguna - Countory',
+    layout: 'layouts/dashboard',
+    user: req.user,
+  });
+});
+
+// Audit Logs
+router.get('/audit-logs', (req, res) => {
+  res.render('pages/admin/audit-logs', {
+    title: 'Audit Log Sistem - Countory',
     layout: 'layouts/dashboard',
     user: req.user,
   });

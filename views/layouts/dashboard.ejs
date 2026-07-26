@@ -10,7 +10,48 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CSS -->
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+          },
+          colors: {
+            primary: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              300: '#93c5fd',
+              400: '#60a5fa',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            },
+            accent: {
+              50: '#fdf4ff',
+              100: '#fae8ff',
+              200: '#f5d0fe',
+              300: '#f0abfc',
+              400: '#e879f9',
+              500: '#d946ef',
+              600: '#c026d3',
+              700: '#a21caf',
+              800: '#86198f',
+              900: '#701a75',
+            },
+          },
+        },
+      },
+    }
+  </script>
+
+  <!-- Custom CSS -->
   <link rel="stylesheet" href="/css/styles.css">
 
   <!-- GSAP -->
@@ -55,6 +96,10 @@
           <i data-lucide="scan" class="w-5 h-5"></i>
           Scan Barang
         </a>
+        <a href="/dashboard/calibration" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600 transition-colors">
+          <i data-lucide="sliders" class="w-5 h-5"></i>
+          Kalibrasi AI
+        </a>
 
         <div class="pt-4 pb-2">
           <p class="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Aktivitas</p>
@@ -90,6 +135,18 @@
         <a href="/dashboard/settings" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600 transition-colors">
           <i data-lucide="settings" class="w-5 h-5"></i>
           Pengaturan
+        </a>
+
+        <div class="pt-4 pb-2">
+          <p class="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Admin & Keamanan</p>
+        </div>
+        <a href="/dashboard/users" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600 transition-colors">
+          <i data-lucide="users" class="w-5 h-5"></i>
+          Pengguna
+        </a>
+        <a href="/dashboard/audit-logs" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600 transition-colors">
+          <i data-lucide="shield-alert" class="w-5 h-5"></i>
+          Audit Log
         </a>
       </nav>
     </aside>

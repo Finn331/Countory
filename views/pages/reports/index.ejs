@@ -1,16 +1,322 @@
 <div class="space-y-6">
-  <div>
-    <h1 class="text-2xl font-bold text-slate-900">Laporan</h1>
-    <p class="text-slate-600">Statistik dan laporan inventaris</p>
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Laporan & Statistik</h1>
+      <p class="text-slate-600">Analisis menyeluruh inventaris dan performa Computer Vision</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <a href="/api/reports/export?type=inventory&format=csv" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-all text-sm shadow-sm">
+        <i data-lucide="download" class="w-4 h-4 text-green-600"></i>
+        Export Stok (CSV)
+      </a>
+      <a href="/api/reports/export?type=movements&format=csv" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-xl transition-all text-sm">
+        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+        Export Pergerakan (CSV)
+      </a>
+    </div>
   </div>
 
-  <div class="bg-white rounded-xl border border-slate-100 p-8 text-center">
-    <i data-lucide="bar-chart-3" class="w-16 h-16 text-slate-300 mx-auto mb-4"></i>
-    <h2 class="text-xl font-bold text-slate-900 mb-2">Coming Soon</h2>
-    <p class="text-slate-600 max-w-md mx-auto">Fitur Laporan dan Statistik akan segera tersedia. Dashboard saat ini menampilkan ringkasan data inventaris.</p>
-    <a href="/dashboard" class="inline-flex items-center gap-2 px-6 py-3 bg-primary-500 text-white font-semibold rounded-xl hover:bg-primary-600 transition-colors mt-6">
-      <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-      Kembali ke Dashboard
-    </a>
+  <!-- Performance Summary Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="gsap-reveal bg-white rounded-2xl p-6 border border-slate-100 card-hover">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Akurasi Deteksi AI</p>
+          <p class="text-2xl font-bold text-slate-900 mt-1" id="statAccuracy">0%</p>
+        </div>
+        <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+          <i data-lucide="target" class="w-6 h-6 text-green-600"></i>
+        </div>
+      </div>
+      <p class="text-xs text-slate-500 mt-3">Tingkat kesesuaian scan & konfirmasi</p>
+    </div>
+
+    <div class="gsap-reveal bg-white rounded-2xl p-6 border border-slate-100 card-hover">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Sesi Scan</p>
+          <p class="text-2xl font-bold text-slate-900 mt-1" id="statTotalScans">0</p>
+        </div>
+        <div class="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center">
+          <i data-lucide="scan" class="w-6 h-6 text-primary-600"></i>
+        </div>
+      </div>
+      <p class="text-xs text-slate-500 mt-3" id="statScanModes">Photo: 0 | Live: 0</p>
+    </div>
+
+    <div class="gsap-reveal bg-white rounded-2xl p-6 border border-slate-100 card-hover">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Kecepatan Deteksi</p>
+          <p class="text-2xl font-bold text-slate-900 mt-1" id="statAvgTime">0 ms</p>
+        </div>
+        <div class="w-12 h-12 bg-accent-100 rounded-xl flex items-center justify-center">
+          <i data-lucide="zap" class="w-6 h-6 text-accent-600"></i>
+        </div>
+      </div>
+      <p class="text-xs text-slate-500 mt-3">Rata-rata waktu pemrosesan OpenCV</p>
+    </div>
+
+    <div class="gsap-reveal bg-white rounded-2xl p-6 border border-slate-100 card-hover">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Barang Terhitung</p>
+          <p class="text-2xl font-bold text-slate-900 mt-1" id="statConfirmedCount">0</p>
+        </div>
+        <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+          <i data-lucide="check-square" class="w-6 h-6 text-yellow-600"></i>
+        </div>
+      </div>
+      <p class="text-xs text-slate-500 mt-3">Total unit terkonfirmasi via kamera</p>
+    </div>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div class="border-b border-slate-200">
+    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+      <button onclick="switchTab('inventory')" id="tabBtn-inventory" class="border-primary-500 text-primary-600 whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm transition-all flex items-center gap-2">
+        <i data-lucide="boxes" class="w-4 h-4"></i> Posisi Stok Inventaris
+      </button>
+      <button onclick="switchTab('movements')" id="tabBtn-movements" class="border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-all flex items-center gap-2">
+        <i data-lucide="history" class="w-4 h-4"></i> Riwayat Pergerakan
+      </button>
+      <button onclick="switchTab('scans')" id="tabBtn-scans" class="border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-all flex items-center gap-2">
+        <i data-lucide="camera" class="w-4 h-4"></i> Log Sesi Scan
+      </button>
+    </nav>
+  </div>
+
+  <!-- Tab Content 1: Inventory -->
+  <div id="tabContent-inventory" class="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-slate-50 border-b border-slate-200">
+          <tr>
+            <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Produk</th>
+            <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">SKU</th>
+            <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Kategori</th>
+            <th class="px-6 py-3.5 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Min / Max</th>
+            <th class="px-6 py-3.5 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Total Stok</th>
+            <th class="px-6 py-3.5 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody-inventory" class="divide-y divide-slate-100">
+          <tr><td colspan="6" class="px-6 py-12 text-center text-slate-400">Memuat data inventaris...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tab Content 2: Movements -->
+  <div id="tabContent-movements" class="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-slate-50 border-b border-slate-200">
+          <tr>
+            <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Tanggal & Waktu</th>
+            <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Produk / Gudang</th>
+            <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Tipe</th>
+            <th class="px-6 py-3.5 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Perubahan</th>
+            <th class="px-6 py-3.5 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Stok Akhir</th>
+            <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">User / Catatan</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody-movements" class="divide-y divide-slate-100">
+          <tr><td colspan="6" class="px-6 py-12 text-center text-slate-400">Memuat data pergerakan...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tab Content 3: Scans -->
+  <div id="tabContent-scans" class="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-slate-50 border-b border-slate-200">
+          <tr>
+            <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Waktu Scan</th>
+            <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">User & Gudang</th>
+            <th class="px-6 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Produk</th>
+            <th class="px-6 py-3.5 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Terdeteksi vs Konfirmasi</th>
+            <th class="px-6 py-3.5 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Kecepatan</th>
+            <th class="px-6 py-3.5 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Mode</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody-scans" class="divide-y divide-slate-100">
+          <tr><td colspan="6" class="px-6 py-12 text-center text-slate-400">Memuat data scan...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
+
+<script>
+let currentTab = 'inventory';
+
+async function init() {
+  await Promise.all([
+    loadDetectionPerformance(),
+    loadScansSummary(),
+    loadInventoryReport()
+  ]);
+}
+
+async function loadDetectionPerformance() {
+  try {
+    const res = await api.get('/api/reports/detection-performance');
+    const perf = res.performance || {};
+    document.getElementById('statAccuracy').textContent = `${(perf.accuracy || 0).toFixed(1)}%`;
+    document.getElementById('statTotalScans').textContent = perf.totalScans || 0;
+    document.getElementById('statAvgTime').textContent = `${Math.round(perf.avgProcessingTime || 0)} ms`;
+    document.getElementById('statScanModes').textContent = `Photo: ${perf.byMode?.photo || 0} | Live: ${perf.byMode?.live || 0}`;
+  } catch (err) {
+    console.error('Failed to load detection performance:', err);
+  }
+}
+
+async function loadScansSummary() {
+  try {
+    const res = await api.get('/api/reports/scans');
+    const sum = res.summary || {};
+    document.getElementById('statConfirmedCount').textContent = (sum.totalConfirmed || 0).toLocaleString('id-ID');
+    renderScansTable(res.report || []);
+  } catch (err) {
+    console.error('Failed to load scans summary:', err);
+  }
+}
+
+async function loadInventoryReport() {
+  try {
+    const res = await api.get('/api/reports/inventory');
+    renderInventoryTable(res.report || []);
+  } catch (err) {
+    console.error('Failed to load inventory report:', err);
+  }
+}
+
+async function loadMovementsReport() {
+  try {
+    const res = await api.get('/api/reports/movements');
+    renderMovementsTable(res.report || []);
+  } catch (err) {
+    console.error('Failed to load movements report:', err);
+  }
+}
+
+function renderInventoryTable(items) {
+  const tbody = document.getElementById('tableBody-inventory');
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-slate-400">Belum ada data inventaris</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = items.map(p => {
+    const isLow = p.totalStock <= p.minimumStock && p.minimumStock > 0;
+    return `
+      <tr class="hover:bg-slate-50 transition-colors">
+        <td class="px-6 py-4">
+          <p class="font-bold text-slate-900">${p.name}</p>
+          ${p.barcode ? `<p class="text-xs text-slate-400 font-mono">${p.barcode}</p>` : ''}
+        </td>
+        <td class="px-6 py-4 text-xs font-mono text-slate-600">${p.sku}</td>
+        <td class="px-6 py-4 text-xs text-slate-600">${p.category}</td>
+        <td class="px-6 py-4 text-right text-xs text-slate-500 font-mono">${p.minimumStock} / ${p.maximumStock}</td>
+        <td class="px-6 py-4 text-right font-bold ${isLow ? 'text-red-600' : 'text-slate-900'}">
+          ${p.totalStock} <span class="text-xs font-normal text-slate-400">${p.unit}</span>
+        </td>
+        <td class="px-6 py-4 text-center">
+          ${isLow ? 
+            '<span class="px-2.5 py-1 text-[10px] font-bold rounded-full bg-red-100 text-red-700 animate-pulse">STOK RENDAH</span>' : 
+            '<span class="px-2.5 py-1 text-[10px] font-bold rounded-full bg-green-100 text-green-700">AMAN</span>'}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderMovementsTable(items) {
+  const tbody = document.getElementById('tableBody-movements');
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-slate-400">Belum ada riwayat pergerakan stok</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = items.map(m => {
+    const isPlus = m.movementType === 'stock_in' || (m.movementType === 'adjustment' && m.currentStock > m.previousStock) || (m.movementType === 'transfer' && m.notes?.includes('masuk'));
+    const badgeColor = m.movementType === 'stock_in' ? 'bg-green-100 text-green-700' : m.movementType === 'stock_out' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700';
+    
+    return `
+      <tr class="hover:bg-slate-50 transition-colors text-xs">
+        <td class="px-6 py-3.5 font-mono text-slate-500">${new Date(m.createdAt).toLocaleString('id-ID')}</td>
+        <td class="px-6 py-3.5">
+          <p class="font-bold text-slate-900">${m.product?.name || '-'}</p>
+          <p class="text-[10px] text-primary-600"><i data-lucide="warehouse" class="w-3 h-3 inline"></i> ${m.warehouse?.name || '-'}</p>
+        </td>
+        <td class="px-6 py-3.5">
+          <span class="px-2 py-0.5 rounded uppercase font-bold text-[10px] ${badgeColor}">${m.movementType}</span>
+        </td>
+        <td class="px-6 py-3.5 text-right font-bold font-mono text-sm ${isPlus ? 'text-green-600' : 'text-red-600'}">
+          ${isPlus ? '+' : '-'}${m.quantity}
+        </td>
+        <td class="px-6 py-3.5 text-right font-mono font-semibold text-slate-800">${m.currentStock}</td>
+        <td class="px-6 py-3.5">
+          <p class="font-medium text-slate-700">${m.user?.name || '-'}</p>
+          <p class="text-[10px] text-slate-400 italic">${m.notes || ''}</p>
+        </td>
+      </tr>
+    `;
+  }).join('');
+  lucide.createIcons();
+}
+
+function renderScansTable(items) {
+  const tbody = document.getElementById('tableBody-scans');
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-slate-400">Belum ada riwayat sesi scan</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = items.map(s => `
+    <tr class="hover:bg-slate-50 transition-colors text-xs">
+      <td class="px-6 py-3.5 font-mono text-slate-500">${new Date(s.createdAt).toLocaleString('id-ID')}</td>
+      <td class="px-6 py-3.5">
+        <p class="font-bold text-slate-900">${s.user?.name || '-'}</p>
+        <p class="text-[10px] text-slate-500">${s.warehouse?.name || '-'}</p>
+      </td>
+      <td class="px-6 py-3.5 font-bold text-slate-800">${s.product?.name || '-'}</td>
+      <td class="px-6 py-3.5 text-center">
+        <span class="px-2 py-1 bg-slate-100 rounded font-mono">${s.detectedCount} Terdeteksi</span>
+        <i data-lucide="arrow-right" class="w-3 h-3 inline mx-1 text-slate-400"></i>
+        <span class="px-2 py-1 bg-green-100 text-green-700 rounded font-mono font-bold">${s.confirmedCount} Konfirmasi</span>
+      </td>
+      <td class="px-6 py-3.5 text-right font-mono text-slate-600">${s.processingTimeMs} ms</td>
+      <td class="px-6 py-3.5 text-center">
+        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${s.scanMode === 'live' ? 'bg-purple-100 text-purple-700' : 'bg-primary-100 text-primary-700'}">${s.scanMode}</span>
+      </td>
+    </tr>
+  `).join('');
+  lucide.createIcons();
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  ['inventory', 'movements', 'scans'].forEach(t => {
+    const btn = document.getElementById(`tabBtn-${t}`);
+    const content = document.getElementById(`tabContent-${t}`);
+    if (t === tab) {
+      btn.className = 'border-primary-500 text-primary-600 whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm transition-all flex items-center gap-2';
+      content.classList.remove('hidden');
+    } else {
+      btn.className = 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-all flex items-center gap-2';
+      content.classList.add('hidden');
+    }
+  });
+
+  if (tab === 'movements') loadMovementsReport();
+  if (tab === 'inventory') loadInventoryReport();
+  if (tab === 'scans') loadScansSummary();
+}
+
+init();
+</script>

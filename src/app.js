@@ -140,6 +140,20 @@ app.get('/', (req, res) => {
   });
 });
 
+app.get('/login', (req, res) => {
+  res.render('pages/auth/login', {
+    title: 'Masuk - Countory',
+    layout: 'layouts/main',
+  });
+});
+
+app.get('/register', (req, res) => {
+  res.render('pages/auth/register', {
+    title: 'Daftar - Countory',
+    layout: 'layouts/main',
+  });
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);

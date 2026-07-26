@@ -1,12 +1,384 @@
 <div class="space-y-6">
-  <div>
-    <h1 class="text-2xl font-bold text-slate-900">Transfer Stok</h1>
-    <p class="text-slate-600">Transfer barang antar gudang</p>
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Transfer Stok</h1>
+      <p class="text-slate-600">Pindahkan barang antar gudang secara aman dengan pencatatan otomatis</p>
+    </div>
+    <button onclick="openModal('addTransfer')" class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary-500 to-accent-500 text-white font-semibold rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-xl transition-all">
+      <i data-lucide="plus" class="w-5 h-5"></i>
+      Buat Transfer Baru
+    </button>
   </div>
 
-  <div class="bg-white rounded-xl border border-slate-100 p-8 text-center">
-    <i data-lucide="arrow-left-right" class="w-16 h-16 text-slate-300 mx-auto mb-4"></i>
-    <h2 class="text-xl font-bold text-slate-900 mb-2">Coming Soon</h2>
-    <p class="text-slate-600 max-w-md mx-auto">Fitur Transfer Stok antar gudang akan segera tersedia.</p>
+  <!-- Filters -->
+  <div class="bg-white rounded-xl border border-slate-100 p-4">
+    <div class="flex flex-col sm:flex-row gap-4">
+      <select id="statusFilter" class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500" onchange="loadTransfers(1)">
+        <option value="">Semua Status</option>
+        <option value="draft">Draft</option>
+        <option value="sent">Sedang Dikirim (Sent)</option>
+        <option value="received">Diterima (Received)</option>
+        <option value="cancelled">Dibatalkan (Cancelled)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Transfers Grid / List -->
+  <div id="transfersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="col-span-full bg-white rounded-xl border border-slate-100 p-12 text-center">
+      <div class="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p class="text-slate-500">Memuat data transfer...</p>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div id="pagination" class="hidden px-6 py-4 bg-white rounded-xl border border-slate-100 items-center justify-between">
+    <p class="text-sm text-slate-600">Menampilkan <span id="showingCount">0</span> dari <span id="totalCount">0</span> transfer</p>
+    <div class="flex gap-2" id="paginationButtons"></div>
   </div>
 </div>
+
+<!-- Add Transfer Modal -->
+<div id="addTransferModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in">
+    <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+      <h2 class="text-xl font-bold text-slate-900">Buat Transfer Stok</h2>
+      <button onclick="closeModal('addTransfer')" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <form id="addTransferForm" class="p-6 space-y-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Gudang Asal (Source) *</label>
+          <select name="sourceWarehouseId" id="sourceWarehouseSelect" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500">
+            <option value="">Pilih Gudang...</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Gudang Tujuan (Destination) *</label>
+          <select name="destinationWarehouseId" id="destWarehouseSelect" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500">
+            <option value="">Pilih Gudang...</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Item Selection -->
+      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+        <h3 class="font-bold text-xs text-slate-700 uppercase tracking-wider">Pilih Barang yang Ditransfer</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Produk *</label>
+            <select id="transferProductSelect" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500">
+              <option value="">Pilih Produk...</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Jumlah Unit *</label>
+            <input type="number" id="transferQuantityInput" min="1" placeholder="10" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500">
+          </div>
+        </div>
+        <button type="button" onclick="addItemToTransferList()" class="w-full py-2 bg-primary-50 text-primary-600 hover:bg-primary-500 hover:text-white rounded-lg text-xs font-bold transition-all border border-primary-200">
+          + Tambahkan ke Daftar Transfer
+        </button>
+      </div>
+
+      <!-- Selected Items List -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Daftar Barang yang Akan Dikirim:</label>
+        <div id="selectedItemsContainer" class="space-y-2 max-h-40 overflow-y-auto p-2 border border-slate-200 rounded-xl bg-white">
+          <p class="text-xs text-slate-400 text-center py-4" id="emptyItemsMsg">Belum ada barang dipilih.</p>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Catatan</label>
+        <textarea name="notes" rows="2" placeholder="Alasan transfer (opsional)" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"></textarea>
+      </div>
+      <div class="flex gap-3 pt-4">
+        <button type="button" onclick="closeModal('addTransfer')" class="flex-1 px-4 py-2 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors">Batal</button>
+        <button type="submit" class="flex-1 px-4 py-2 bg-primary-500 text-white font-medium rounded-lg hover:bg-primary-600 transition-colors">Buat Transfer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+let currentPage = 1;
+let warehousesList = [];
+let productsList = [];
+let transferItemsList = [];
+
+async function init() {
+  await Promise.all([loadWarehouses(), loadProducts()]);
+  loadTransfers(1);
+}
+
+async function loadWarehouses() {
+  try {
+    const res = await api.get('/api/warehouses');
+    warehousesList = res.warehouses || [];
+    const opts = warehousesList.map(w => `<option value="${w.id}">${w.name} (${w.code})</option>`).join('');
+    document.getElementById('sourceWarehouseSelect').innerHTML = '<option value="">Pilih Gudang Asal...</option>' + opts;
+    document.getElementById('destWarehouseSelect').innerHTML = '<option value="">Pilih Gudang Tujuan...</option>' + opts;
+  } catch (err) {
+    console.error('Failed to load warehouses:', err);
+  }
+}
+
+async function loadProducts() {
+  try {
+    const res = await api.get('/api/products?limit=100');
+    productsList = res.products || [];
+    const opts = productsList.map(p => `<option value="${p.id}" data-name="${p.name}" data-sku="${p.sku}">${p.name} (${p.sku})</option>`).join('');
+    document.getElementById('transferProductSelect').innerHTML = '<option value="">Pilih Produk...</option>' + opts;
+  } catch (err) {
+    console.error('Failed to load products:', err);
+  }
+}
+
+function addItemToTransferList() {
+  const sel = document.getElementById('transferProductSelect');
+  const qtyInput = document.getElementById('transferQuantityInput');
+  const productId = sel.value;
+  const quantity = parseInt(qtyInput.value);
+
+  if (!productId || !quantity || quantity <= 0) {
+    showToast('Pilih produk dan masukkan jumlah yang valid', 'warning');
+    return;
+  }
+
+  const productName = sel.options[sel.selectedIndex].getAttribute('data-name');
+  const productSku = sel.options[sel.selectedIndex].getAttribute('data-sku');
+
+  // Check if already in list
+  const existingIdx = transferItemsList.findIndex(item => item.productId === parseInt(productId));
+  if (existingIdx >= 0) {
+    transferItemsList[existingIdx].quantity += quantity;
+  } else {
+    transferItemsList.push({ productId: parseInt(productId), name: productName, sku: productSku, quantity });
+  }
+
+  sel.value = '';
+  qtyInput.value = '';
+  renderSelectedItems();
+}
+
+function removeItemFromList(idx) {
+  transferItemsList.splice(idx, 1);
+  renderSelectedItems();
+}
+
+function renderSelectedItems() {
+  const container = document.getElementById('selectedItemsContainer');
+  if (!transferItemsList.length) {
+    container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4" id="emptyItemsMsg">Belum ada barang dipilih.</p>';
+    return;
+  }
+
+  container.innerHTML = transferItemsList.map((item, idx) => `
+    <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg text-xs">
+      <div>
+        <span class="font-bold text-slate-800">${item.name}</span>
+        <span class="text-slate-400 font-mono ml-1">(${item.sku})</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="px-2 py-0.5 bg-primary-100 text-primary-700 font-bold rounded">${item.quantity} Unit</span>
+        <button type="button" onclick="removeItemFromList(${idx})" class="text-red-500 hover:text-red-700">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  `).join('');
+  lucide.createIcons();
+}
+
+async function loadTransfers(page = 1) {
+  currentPage = page;
+  const status = document.getElementById('statusFilter')?.value || '';
+  const params = new URLSearchParams({ page, limit: 12 });
+  if (status) params.append('status', status);
+
+  try {
+    const res = await api.get(`/api/transfers?${params}`);
+    renderTransfers(res.transfers || []);
+    renderPagination(res.pagination || {});
+  } catch (err) {
+    showToast('Gagal memuat data transfer', 'error');
+  }
+}
+
+function getStatusBadgeHtml(status) {
+  const map = {
+    draft: '<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-700">DRAFT</span>',
+    sent: '<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 animate-pulse">DIKIRIM (SENT)</span>',
+    received: '<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">DITERIMA</span>',
+    cancelled: '<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">DIBATALKAN</span>'
+  };
+  return map[status] || `<span class="px-2 py-1 text-xs font-semibold rounded bg-slate-100">${status}</span>`;
+}
+
+function renderTransfers(transfers) {
+  const grid = document.getElementById('transfersGrid');
+  if (!transfers.length) {
+    grid.innerHTML = `
+      <div class="col-span-full bg-white rounded-2xl border border-slate-100 p-12 text-center">
+        <i data-lucide="arrow-left-right" class="w-16 h-16 text-slate-300 mx-auto mb-4"></i>
+        <h3 class="text-lg font-bold text-slate-700 mb-1">Belum Ada Riwayat Transfer</h3>
+        <p class="text-sm text-slate-500 max-w-md mx-auto mb-6">Mulai pindahkan stok antar gudang dengan mencatat transfer baru.</p>
+        <button onclick="openModal('addTransfer')" class="px-6 py-2.5 bg-primary-500 text-white text-sm font-semibold rounded-xl hover:bg-primary-600 transition-colors">Buat Transfer</button>
+      </div>`;
+    lucide.createIcons();
+    return;
+  }
+
+  grid.innerHTML = transfers.map(t => `
+    <div class="gsap-reveal bg-white rounded-2xl border border-slate-100 p-6 card-hover flex flex-col justify-between space-y-4">
+      <div>
+        <div class="flex items-start justify-between gap-2 mb-3">
+          ${getStatusBadgeHtml(t.status)}
+          <span class="text-xs text-slate-400 font-mono">${new Date(t.createdAt).toLocaleDateString('id-ID')}</span>
+        </div>
+        
+        <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 mb-3">
+          <div class="text-left">
+            <p class="text-[10px] text-slate-400 uppercase font-semibold">Gudang Asal</p>
+            <p class="text-sm font-bold text-slate-800">${t.sourceWarehouse?.name || '-'}</p>
+          </div>
+          <i data-lucide="arrow-right" class="w-5 h-5 text-primary-500 mx-2"></i>
+          <div class="text-right">
+            <p class="text-[10px] text-slate-400 uppercase font-semibold">Gudang Tujuan</p>
+            <p class="text-sm font-bold text-slate-800">${t.destinationWarehouse?.name || '-'}</p>
+          </div>
+        </div>
+
+        <div class="space-y-1.5 max-h-24 overflow-y-auto text-xs">
+          ${(t.items || []).map(i => `
+            <div class="flex justify-between items-center py-1 border-b border-slate-100 last:border-0">
+              <span class="font-medium text-slate-700">${i.product?.name || 'Produk'}</span>
+              <span class="font-bold text-primary-600">${i.quantity} Unit</span>
+            </div>
+          `).join('')}
+        </div>
+
+        ${t.notes ? `<p class="text-xs text-slate-500 mt-3 bg-primary-50/50 p-2 rounded-lg line-clamp-1 italic">${t.notes}</p>` : ''}
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+        ${t.status === 'draft' ? `
+          <button onclick="sendTransfer(${t.id})" class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-semibold transition-colors">
+            Kirim Barang (Send)
+          </button>
+          <button onclick="cancelTransfer(${t.id})" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Batalkan">
+            <i data-lucide="x-circle" class="w-4 h-4"></i>
+          </button>
+        ` : ''}
+        ${t.status === 'sent' ? `
+          <button onclick="receiveTransfer(${t.id})" class="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-semibold transition-colors shadow">
+            Terima Barang (Receive)
+          </button>
+          <button onclick="cancelTransfer(${t.id})" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Batalkan">
+            <i data-lucide="x-circle" class="w-4 h-4"></i>
+          </button>
+        ` : ''}
+        ${t.status === 'received' || t.status === 'cancelled' ? `
+          <span class="text-xs text-slate-400 font-medium">Selesai</span>
+        ` : ''}
+      </div>
+    </div>
+  `).join('');
+  lucide.createIcons();
+}
+
+function renderPagination(pagination) {
+  const pag = document.getElementById('pagination');
+  if (!pagination.total) {
+    pag.classList.add('hidden');
+    return;
+  }
+  pag.classList.remove('hidden');
+  pag.classList.add('flex');
+  document.getElementById('showingCount').textContent = Math.min(pagination.page * pagination.limit, pagination.total);
+  document.getElementById('totalCount').textContent = pagination.total;
+
+  const container = document.getElementById('paginationButtons');
+  let html = '';
+  for (let i = 1; i <= (pagination.pages || 1); i++) {
+    html += `<button onclick="loadTransfers(${i})" class="px-3 py-1 text-sm rounded-lg ${i === pagination.page ? 'bg-primary-500 text-white font-bold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${i}</button>`;
+  }
+  container.innerHTML = html;
+}
+
+function openModal(type) {
+  transferItemsList = [];
+  renderSelectedItems();
+  document.getElementById(`${type}Modal`).classList.remove('hidden');
+  document.getElementById(`${type}Modal`).classList.add('flex');
+}
+
+function closeModal(type) {
+  document.getElementById(`${type}Modal`).classList.add('hidden');
+  document.getElementById(`${type}Modal`).classList.remove('flex');
+  document.getElementById(`${type}Form`).reset();
+}
+
+document.getElementById('addTransferForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const data = Object.fromEntries(formData);
+  
+  if (!transferItemsList.length) {
+    showToast('Tambahkan minimal 1 barang yang akan ditransfer', 'error');
+    return;
+  }
+  
+  data.items = transferItemsList.map(item => ({ productId: item.productId, quantity: item.quantity }));
+  data.sourceWarehouseId = parseInt(data.sourceWarehouseId);
+  data.destinationWarehouseId = parseInt(data.destinationWarehouseId);
+
+  try {
+    await api.post('/api/transfers', data);
+    showToast('Transfer stok berhasil dibuat', 'success');
+    closeModal('addTransfer');
+    loadTransfers(1);
+  } catch (err) {
+    showToast(err.message || 'Gagal membuat transfer stok', 'error');
+  }
+});
+
+async function sendTransfer(id) {
+  if (!confirm('Kirim barang transfer ini sekarang? Stok gudang asal akan dikurangi otomatis.')) return;
+  try {
+    await api.post(`/api/transfers/${id}/send`);
+    showToast('Transfer berhasil dikirim!', 'success');
+    loadTransfers(currentPage);
+  } catch (err) {
+    showToast(err.message || 'Gagal mengirim transfer', 'error');
+  }
+}
+
+async function receiveTransfer(id) {
+  if (!confirm('Konfirmasi penerimaan barang di gudang tujuan? Stok akan bertambah otomatis.')) return;
+  try {
+    await api.post(`/api/transfers/${id}/receive`);
+    showToast('Barang transfer diterima & stok bertambah!', 'success');
+    loadTransfers(currentPage);
+  } catch (err) {
+    showToast(err.message || 'Gagal menerima transfer', 'error');
+  }
+}
+
+async function cancelTransfer(id) {
+  if (!confirm('Batalkan transfer stok ini? (Jika barang sedang dikirim, stok asal akan dikembalikan)')) return;
+  try {
+    await api.post(`/api/transfers/${id}/cancel`);
+    showToast('Transfer dibatalkan', 'success');
+    loadTransfers(currentPage);
+  } catch (err) {
+    showToast(err.message || 'Gagal membatalkan', 'error');
+  }
+}
+
+init();
+</script>
