@@ -1,5 +1,41 @@
+<!-- Navbar -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-slate-200/80 transition-all">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16 sm:h-20">
+      <!-- Logo -->
+      <a href="/" class="flex items-center gap-3 group">
+        <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center shadow-md shadow-primary-500/20 group-hover:scale-105 transition-transform">
+          <span class="text-white font-bold text-lg">C</span>
+        </div>
+        <span class="font-bold text-xl text-slate-900">Countory</span>
+      </a>
+
+      <!-- Desktop Nav -->
+      <nav class="hidden md:flex items-center gap-8">
+        <a href="#features" class="text-sm font-medium text-slate-600 hover:text-primary-600 transition-colors">Fitur</a>
+        <a href="#how-it-works" class="text-sm font-medium text-slate-600 hover:text-primary-600 transition-colors">Cara Kerja</a>
+        <a href="#cta" class="text-sm font-medium text-slate-600 hover:text-primary-600 transition-colors">Mulai</a>
+      </nav>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-3 sm:gap-4">
+        <a href="/login" class="px-4 py-2 text-sm font-semibold text-slate-700 hover:text-primary-600 transition-colors">
+          Masuk
+        </a>
+        <a href="/register" class="px-4 sm:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-sm font-semibold rounded-xl shadow-md shadow-primary-500/20 hover:shadow-lg hover:shadow-primary-500/30 transition-all btn-shine">
+          Daftar Gratis
+        </a>
+        <a href="/dashboard" class="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all border border-slate-200" title="Buka Dashboard Jika Sudah Login">
+          <i data-lucide="layout-dashboard" class="w-4 h-4 text-primary-600"></i>
+          <span>Dashboard</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
 <!-- Hero Section -->
-<section class="relative min-h-screen flex items-center overflow-hidden">
+<section class="relative min-h-screen flex items-center overflow-hidden pt-16">
   <!-- Background Gradient -->
   <div class="absolute inset-0 bg-gradient-to-br from-primary-50 via-white to-accent-50"></div>
 
@@ -218,7 +254,7 @@
 </section>
 
 <!-- How It Works Section -->
-<section class="py-24 bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+<section id="how-it-works" class="py-24 bg-gradient-to-br from-slate-900 to-slate-800 text-white">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="text-center max-w-3xl mx-auto mb-16">
       <h2 class="text-3xl sm:text-4xl font-bold mb-4">
@@ -264,7 +300,7 @@
 </section>
 
 <!-- CTA Section -->
-<section class="py-24 bg-white">
+<section id="cta" class="py-24 bg-white">
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
     <div class="gsap-reveal bg-gradient-to-br from-primary-500 to-accent-500 rounded-3xl p-12 shadow-2xl">
       <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">

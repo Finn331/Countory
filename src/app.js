@@ -154,6 +154,20 @@ app.get('/register', (req, res) => {
   });
 });
 
+app.get('/forgot-password', (req, res) => {
+  res.render('pages/auth/forgot-password', {
+    title: 'Lupa Password - Countory',
+    layout: 'layouts/main',
+  });
+});
+
+app.get('/reset-password', (req, res) => {
+  res.render('pages/auth/reset-password', {
+    title: 'Reset Password - Countory',
+    layout: 'layouts/main',
+  });
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
