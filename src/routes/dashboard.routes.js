@@ -119,6 +119,7 @@ router.get('/settings', (req, res) => {
     title: 'Pengaturan - Countory',
     layout: 'layouts/dashboard',
     user: req.user,
+    nodeEnv: process.env.NODE_ENV || 'development',
   });
 });
 

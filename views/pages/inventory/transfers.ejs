@@ -311,8 +311,10 @@ function renderPagination(pagination) {
 }
 
 function openModal(type) {
-  transferItemsList = [];
-  renderSelectedItems();
+  if (type === 'addTransfer') {
+    transferItemsList = [];
+    renderSelectedItems();
+  }
   document.getElementById(`${type}Modal`).classList.remove('hidden');
   document.getElementById(`${type}Modal`).classList.add('flex');
 }
@@ -320,7 +322,8 @@ function openModal(type) {
 function closeModal(type) {
   document.getElementById(`${type}Modal`).classList.add('hidden');
   document.getElementById(`${type}Modal`).classList.remove('flex');
-  document.getElementById(`${type}Form`).reset();
+  const form = document.getElementById(`${type}Form`);
+  if (form) form.reset();
 }
 
 document.getElementById('addTransferForm').addEventListener('submit', async (e) => {

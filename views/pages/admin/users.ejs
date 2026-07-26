@@ -171,7 +171,7 @@ function renderUsers() {
       </div>
 
       <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
-        <button onclick="openEditUser(${u.id}, '${u.name}', '${u.email}', '${u.role}', '${u.status}')" class="px-3 py-1.5 bg-slate-100 hover:bg-primary-50 hover:text-primary-600 rounded-lg text-xs font-semibold text-slate-700 transition-all flex items-center gap-1">
+        <button onclick='openEditUser(${u.id}, ${JSON.stringify(u.name || "")}, ${JSON.stringify(u.email || "")}, ${JSON.stringify(u.role || "")}, ${JSON.stringify(u.status || "")})' class="px-3 py-1.5 bg-slate-100 hover:bg-primary-50 hover:text-primary-600 rounded-lg text-xs font-semibold text-slate-700 transition-all flex items-center gap-1">
           <i data-lucide="edit" class="w-3.5 h-3.5"></i> Edit
         </button>
         <button onclick="deleteUser(${u.id})" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus Akun">

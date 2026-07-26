@@ -306,7 +306,8 @@ function openModal(type) {
 function closeModal(type) {
   document.getElementById(`${type}Modal`).classList.add('hidden');
   document.getElementById(`${type}Modal`).classList.remove('flex');
-  document.getElementById(`${type}Form`).reset();
+  const form = document.getElementById(`${type}Form`);
+  if (form) form.reset();
 }
 
 async function editProduct(id) {

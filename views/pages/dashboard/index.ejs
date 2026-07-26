@@ -119,12 +119,13 @@
 async function loadDashboard() {
   try {
     const res = await api.get('/api/reports/dashboard');
-    const { stats, recentMovements } = res;
+    const stats = res.stats || {};
+    const recentMovements = res.recentMovements || [];
 
-    document.getElementById('totalProducts').textContent = stats.totalProducts;
-    document.getElementById('totalStock').textContent = stats.totalStock.toLocaleString('id-ID');
-    document.getElementById('totalWarehouses').textContent = stats.totalWarehouses;
-    document.getElementById('lowStockCount').textContent = stats.lowStockCount;
+    document.getElementById('totalProducts').textContent = stats.totalProducts || 0;
+    document.getElementById('totalStock').textContent = (stats.totalStock || 0).toLocaleString('id-ID');
+    document.getElementById('totalWarehouses').textContent = stats.totalWarehouses || 0;
+    document.getElementById('lowStockCount').textContent = stats.lowStockCount || 0;
 
     renderRecentActivity(recentMovements);
   } catch (err) {
@@ -134,20 +135,20 @@ async function loadDashboard() {
         <i data-lucide="inbox" class="w-12 h-12 text-slate-300 mx-auto mb-4"></i>
         <p class="text-slate-500">Gagal memuat data</p>
       </div>`;
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 }
 
 function renderRecentActivity(movements) {
   const container = document.getElementById('recentActivity');
-  if (!movements.length) {
+  if (!movements || !movements.length) {
     container.innerHTML = `
       <div class="text-center py-8">
         <i data-lucide="inbox" class="w-12 h-12 text-slate-300 mx-auto mb-4"></i>
         <p class="text-slate-500">Belum ada aktivitas</p>
         <p class="text-sm text-slate-400 mt-1">Mulai dengan scan barang atau catat stok masuk/keluar</p>
       </div>`;
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
     return;
   }
 
@@ -160,18 +161,18 @@ function renderRecentActivity(movements) {
               <i data-lucide="${m.movementType === 'stock_in' ? 'arrow-down-left' : m.movementType === 'stock_out' ? 'arrow-up-right' : 'refresh-cw'}" class="w-5 h-5 ${m.movementType === 'stock_in' ? 'text-green-600' : m.movementType === 'stock_out' ? 'text-red-600' : 'text-blue-600'}"></i>
             </div>
             <div>
-              <p class="font-medium text-slate-900">${m.product.name}</p>
-              <p class="text-xs text-slate-500">${m.warehouse.name} • ${m.user.name}</p>
+              <p class="font-medium text-slate-900">${m.product?.name || '-'}</p>
+              <p class="text-xs text-slate-500">${m.warehouse?.name || '-'} • ${m.user?.name || 'Sistem'}</p>
             </div>
           </div>
           <div class="text-right">
-            <p class="font-bold ${m.movementType === 'stock_in' ? 'text-green-600' : m.movementType === 'stock_out' ? 'text-red-600' : 'text-blue-600'}">${m.movementType === 'stock_out' ? '-' : '+'}${m.quantity}</p>
-            <p class="text-xs text-slate-500">${new Date(m.createdAt).toLocaleString('id-ID')}</p>
+            <p class="font-bold ${m.movementType === 'stock_in' ? 'text-green-600' : m.movementType === 'stock_out' ? 'text-red-600' : 'text-blue-600'}">${m.movementType === 'stock_out' ? '-' : '+'}${m.quantity || 0}</p>
+            <p class="text-xs text-slate-500">${m.createdAt ? new Date(m.createdAt).toLocaleString('id-ID') : '-'}</p>
           </div>
         </div>
       `).join('')}
     </div>`;
-  lucide.createIcons();
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 loadDashboard();

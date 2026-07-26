@@ -324,8 +324,8 @@ async function confirmCount() {
                      transactionType === 'stock_out' ? '/api/inventory/stock-out' :
                      '/api/inventory/adjustment';
 
-    const payload = transactionType === 'adjustment'
-      ? { productId, warehouseId, newQuantity: count, notes: 'Scan result' }
+    const payload = transactionType === 'opname'
+      ? { productId, warehouseId, newQuantity: count, notes: 'Scan result - opname' }
       : { productId, warehouseId, quantity: count, notes: 'Scan result' };
 
     await api.post(endpoint, payload);

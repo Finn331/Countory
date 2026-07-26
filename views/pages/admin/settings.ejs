@@ -31,7 +31,7 @@
         </div>
         <div class="flex justify-between">
           <span class="text-slate-600">Lingkungan</span>
-          <span class="font-medium text-slate-900"><%= process.env.NODE_ENV || 'development' %></span>
+          <span class="font-medium text-slate-900"><%= nodeEnv || 'development' %></span>
         </div>
       </div>
     </div>
@@ -57,9 +57,10 @@ async function loadProfile() {
   try {
     const res = await api.get('/api/auth/me');
     const user = res.user;
-    document.getElementById('userName').textContent = user.name;
-    document.getElementById('userRole').textContent = user.role;
-    document.getElementById('userInitial').textContent = user.name.charAt(0);
+    if (!user) return;
+    document.getElementById('userName').textContent = user.name || 'User';
+    document.getElementById('userRole').textContent = user.role || 'staff';
+    document.getElementById('userInitial').textContent = (user.name || 'U').charAt(0).toUpperCase();
   } catch (err) {
     console.error('Load profile error:', err);
   }
