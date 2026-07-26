@@ -7,6 +7,7 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { PrismaClient } from '@prisma/client';
+import expressLayouts from 'express-ejs-layouts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -17,18 +18,38 @@ const prisma = new PrismaClient();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '..', 'views'));
 app.set('env', process.env.NODE_ENV || 'development');
+app.set('layout', 'layouts/main');
 app.disable('x-powered-by');
+
+// ==================== EJS LAYOUTS ====================
+app.use(expressLayouts);
 
 // ==================== SECURITY MIDDLEWARE ====================
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://unpkg.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "'unsafe-eval'",
+        "https://cdn.jsdelivr.net",
+        "https://cdnjs.cloudflare.com",
+        "https://unpkg.com",
+        "https://cdn.tailwindcss.com",
+        "https://docs.opencv.org"
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://cdn.jsdelivr.net",
+        "https://cdnjs.cloudflare.com",
+        "https://fonts.googleapis.com",
+        "https://cdn.tailwindcss.com"
+      ],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"],
-      connectSrc: ["'self'"],
+      connectSrc: ["'self'", "https:", "http:"],
       mediaSrc: ["'self'", "blob:", "https:"],
       objectSrc: ["'none'"],
       frameSrc: ["'none'"],
