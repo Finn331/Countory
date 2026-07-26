@@ -126,7 +126,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/warehouses', warehouseRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/scans', scanRoutes);
-app.use('/api/detection-profiles', detectionRoutes);
+app.use('/api', detectionRoutes);
 app.use('/api/stock-opnames', opnameRoutes);
 app.use('/api/transfers', transferRoutes);
 app.use('/api', adminRoutes);

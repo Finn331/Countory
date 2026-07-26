@@ -131,6 +131,10 @@ export const deleteUser = async (req, res) => {
       return res.status(404).json({ error: 'Pengguna tidak ditemukan' });
     }
 
+    if (user.organizationId !== req.user.organizationId) {
+      return res.status(403).json({ error: 'Tidak memiliki akses' });
+    }
+
     if (user.id === req.user.id) {
       return res.status(409).json({ error: 'Tidak dapat menghapus akun sendiri' });
     }
@@ -166,6 +170,18 @@ export const getNotifications = async (req, res) => {
 // PATCH /api/notifications/:id/read
 export const markNotificationRead = async (req, res) => {
   try {
+    const notification = await prisma.notification.findUnique({
+      where: { id: parseInt(req.params.id) },
+    });
+
+    if (!notification) {
+      return res.status(404).json({ error: 'Notifikasi tidak ditemukan' });
+    }
+
+    if (notification.userId !== req.user.id) {
+      return res.status(403).json({ error: 'Tidak memiliki akses' });
+    }
+
     await prisma.notification.update({
       where: { id: parseInt(req.params.id) },
       data: { isRead: true },

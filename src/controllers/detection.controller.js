@@ -3,9 +3,32 @@ import { validationResult } from 'express-validator';
 
 const prisma = new PrismaClient();
 
+// Helper: Check if product belongs to user's organization
+const checkProductOrg = async (productId, organizationId) => {
+  const product = await prisma.product.findUnique({
+    where: { id: parseInt(productId) },
+    select: { organizationId: true },
+  });
+  return product && product.organizationId === organizationId;
+};
+
+// Helper: Check if profile's product belongs to user's organization
+const checkProfileOrg = async (profileId, organizationId) => {
+  const profile = await prisma.detectionProfile.findUnique({
+    where: { id: parseInt(profileId) },
+    include: { product: { select: { organizationId: true } } },
+  });
+  return profile && profile.product.organizationId === organizationId;
+};
+
 // GET /api/products/:id/detection-profiles
 export const getDetectionProfiles = async (req, res) => {
   try {
+    const hasAccess = await checkProductOrg(req.params.id, req.user.organizationId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Produk tidak ditemukan' });
+    }
+
     const profiles = await prisma.detectionProfile.findMany({
       where: { productId: parseInt(req.params.id) },
       orderBy: { version: 'desc' },
@@ -26,6 +49,11 @@ export const createDetectionProfile = async (req, res) => {
   }
 
   try {
+    const hasAccess = await checkProductOrg(req.params.id, req.user.organizationId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Produk tidak ditemukan' });
+    }
+
     const {
       name,
       detectionType,
@@ -47,7 +75,6 @@ export const createDetectionProfile = async (req, res) => {
       hsvMax,
     } = req.body;
 
-    // Get latest version
     const latestProfile = await prisma.detectionProfile.findFirst({
       where: { productId: parseInt(req.params.id) },
       orderBy: { version: 'desc' },
@@ -88,13 +115,14 @@ export const createDetectionProfile = async (req, res) => {
 // PUT /api/detection-profiles/:id
 export const updateDetectionProfile = async (req, res) => {
   try {
+    const hasAccess = await checkProfileOrg(req.params.id, req.user.organizationId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Profil deteksi tidak ditemukan' });
+    }
+
     const profile = await prisma.detectionProfile.findUnique({
       where: { id: parseInt(req.params.id) },
     });
-
-    if (!profile) {
-      return res.status(404).json({ error: 'Profil deteksi tidak ditemukan' });
-    }
 
     const updated = await prisma.detectionProfile.update({
       where: { id: parseInt(req.params.id) },
@@ -131,21 +159,20 @@ export const updateDetectionProfile = async (req, res) => {
 // POST /api/detection-profiles/:id/activate
 export const activateProfile = async (req, res) => {
   try {
+    const hasAccess = await checkProfileOrg(req.params.id, req.user.organizationId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Profil deteksi tidak ditemukan' });
+    }
+
     const profile = await prisma.detectionProfile.findUnique({
       where: { id: parseInt(req.params.id) },
     });
 
-    if (!profile) {
-      return res.status(404).json({ error: 'Profil deteksi tidak ditemukan' });
-    }
-
-    // Deactivate all other profiles for this product
     await prisma.detectionProfile.updateMany({
       where: { productId: profile.productId },
       data: { isActive: false },
     });
 
-    // Activate this profile
     await prisma.detectionProfile.update({
       where: { id: parseInt(req.params.id) },
       data: { isActive: true },
@@ -161,11 +188,8 @@ export const activateProfile = async (req, res) => {
 // DELETE /api/detection-profiles/:id
 export const deleteDetectionProfile = async (req, res) => {
   try {
-    const profile = await prisma.detectionProfile.findUnique({
-      where: { id: parseInt(req.params.id) },
-    });
-
-    if (!profile) {
+    const hasAccess = await checkProfileOrg(req.params.id, req.user.organizationId);
+    if (!hasAccess) {
       return res.status(404).json({ error: 'Profil deteksi tidak ditemukan' });
     }
 

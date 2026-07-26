@@ -224,6 +224,18 @@ export const deleteProduct = async (req, res) => {
   try {
     const product = await prisma.product.findUnique({
       where: { id: parseInt(req.params.id) },
+      include: {
+        _count: {
+          select: {
+            warehouseStocks: true,
+            inventoryMovements: true,
+            scanSessions: true,
+            stockOpnameItems: true,
+            stockTransferItems: true,
+            detectionProfiles: true,
+          },
+        },
+      },
     });
 
     if (!product) {
@@ -233,6 +245,24 @@ export const deleteProduct = async (req, res) => {
     if (product.organizationId !== req.user.organizationId) {
       return res.status(403).json({ error: 'Tidak memiliki akses' });
     }
+
+    const hasRelations =
+      product._count.warehouseStocks > 0 ||
+      product._count.inventoryMovements > 0 ||
+      product._count.scanSessions > 0 ||
+      product._count.stockOpnameItems > 0 ||
+      product._count.stockTransferItems > 0;
+
+    if (hasRelations) {
+      return res.status(409).json({
+        error: 'Tidak dapat menghapus produk yang masih memiliki data terkait (stok, riwayat, atau scan)',
+      });
+    }
+
+    // Delete detection profiles first (no FK constraint issue)
+    await prisma.detectionProfile.deleteMany({
+      where: { productId: parseInt(req.params.id) },
+    });
 
     await prisma.product.delete({
       where: { id: parseInt(req.params.id) },

@@ -34,8 +34,8 @@ router.delete('/users/:id', authorize('admin'), deleteUser);
 
 // Notifications
 router.get('/notifications', getNotifications);
-router.patch('/notifications/:id/read', markNotificationRead);
 router.patch('/notifications/read-all', markAllNotificationsRead);
+router.patch('/notifications/:id/read', markNotificationRead);
 
 // Audit logs
 router.get('/audit-logs', authorize('admin'), getAuditLogs);

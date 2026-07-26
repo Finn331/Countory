@@ -224,6 +224,14 @@ export const adjustment = async (req, res) => {
       return res.status(404).json({ error: 'Produk tidak ditemukan' });
     }
 
+    const warehouse = await prisma.warehouse.findUnique({
+      where: { id: parseInt(warehouseId) },
+    });
+
+    if (!warehouse || warehouse.organizationId !== req.user.organizationId) {
+      return res.status(404).json({ error: 'Gudang tidak ditemukan' });
+    }
+
     const warehouseStock = await prisma.warehouseStock.findUnique({
       where: {
         warehouseId_productId: {

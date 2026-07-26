@@ -3,6 +3,15 @@ import { validationResult } from 'express-validator';
 
 const prisma = new PrismaClient();
 
+// Helper: Check if opname belongs to user's organization
+const checkOpnameOrg = async (opnameId, organizationId) => {
+  const opname = await prisma.stockOpname.findUnique({
+    where: { id: parseInt(opnameId) },
+    include: { warehouse: { select: { organizationId: true } } },
+  });
+  return opname && opname.warehouse.organizationId === organizationId;
+};
+
 // GET /api/stock-opnames
 export const getStockOpnames = async (req, res) => {
   try {
@@ -85,13 +94,14 @@ export const createStockOpname = async (req, res) => {
 // POST /api/stock-opnames/:id/items
 export const addOpnameItem = async (req, res) => {
   try {
+    const hasAccess = await checkOpnameOrg(req.params.id, req.user.organizationId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Stock opname tidak ditemukan' });
+    }
+
     const opname = await prisma.stockOpname.findUnique({
       where: { id: parseInt(req.params.id) },
     });
-
-    if (!opname) {
-      return res.status(404).json({ error: 'Stock opname tidak ditemukan' });
-    }
 
     if (opname.status !== 'draft' && opname.status !== 'in_progress') {
       return res.status(409).json({ error: 'Stock opname sudah diproses' });
@@ -153,14 +163,15 @@ export const addOpnameItem = async (req, res) => {
 // POST /api/stock-opnames/:id/submit
 export const submitOpname = async (req, res) => {
   try {
+    const hasAccess = await checkOpnameOrg(req.params.id, req.user.organizationId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Stock opname tidak ditemukan' });
+    }
+
     const opname = await prisma.stockOpname.findUnique({
       where: { id: parseInt(req.params.id) },
       include: { items: true },
     });
-
-    if (!opname) {
-      return res.status(404).json({ error: 'Stock opname tidak ditemukan' });
-    }
 
     if (opname.status !== 'in_progress') {
       return res.status(409).json({ error: 'Stock opname harus dalam status in_progress' });
@@ -184,14 +195,15 @@ export const submitOpname = async (req, res) => {
 // POST /api/stock-opnames/:id/approve
 export const approveOpname = async (req, res) => {
   try {
+    const hasAccess = await checkOpnameOrg(req.params.id, req.user.organizationId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Stock opname tidak ditemukan' });
+    }
+
     const opname = await prisma.stockOpname.findUnique({
       where: { id: parseInt(req.params.id) },
       include: { items: true },
     });
-
-    if (!opname) {
-      return res.status(404).json({ error: 'Stock opname tidak ditemukan' });
-    }
 
     if (opname.status !== 'submitted') {
       return res.status(409).json({ error: 'Stock opname harus dalam status submitted' });
@@ -255,13 +267,14 @@ export const approveOpname = async (req, res) => {
 // DELETE /api/stock-opnames/:id
 export const deleteOpname = async (req, res) => {
   try {
+    const hasAccess = await checkOpnameOrg(req.params.id, req.user.organizationId);
+    if (!hasAccess) {
+      return res.status(404).json({ error: 'Stock opname tidak ditemukan' });
+    }
+
     const opname = await prisma.stockOpname.findUnique({
       where: { id: parseInt(req.params.id) },
     });
-
-    if (!opname) {
-      return res.status(404).json({ error: 'Stock opname tidak ditemukan' });
-    }
 
     if (opname.status === 'approved') {
       return res.status(409).json({ error: 'Tidak dapat menghapus opname yang sudah disetujui' });

@@ -139,6 +139,14 @@ export const sendTransfer = async (req, res) => {
       return res.status(404).json({ error: 'Transfer tidak ditemukan' });
     }
 
+    // Organization access check
+    const sourceWarehouse = await prisma.warehouse.findUnique({
+      where: { id: transfer.sourceWarehouseId },
+    });
+    if (!sourceWarehouse || sourceWarehouse.organizationId !== req.user.organizationId) {
+      return res.status(403).json({ error: 'Tidak memiliki akses' });
+    }
+
     if (transfer.status !== 'draft') {
       return res.status(409).json({ error: 'Transfer harus dalam status draft' });
     }
@@ -208,6 +216,14 @@ export const receiveTransfer = async (req, res) => {
       return res.status(404).json({ error: 'Transfer tidak ditemukan' });
     }
 
+    // Organization access check
+    const destWarehouse = await prisma.warehouse.findUnique({
+      where: { id: transfer.destinationWarehouseId },
+    });
+    if (!destWarehouse || destWarehouse.organizationId !== req.user.organizationId) {
+      return res.status(403).json({ error: 'Tidak memiliki akses' });
+    }
+
     if (transfer.status !== 'sent') {
       return res.status(409).json({ error: 'Transfer harus dalam status sent' });
     }
@@ -273,20 +289,78 @@ export const cancelTransfer = async (req, res) => {
   try {
     const transfer = await prisma.stockTransfer.findUnique({
       where: { id: parseInt(req.params.id) },
+      include: { items: true },
     });
 
     if (!transfer) {
       return res.status(404).json({ error: 'Transfer tidak ditemukan' });
     }
 
+    // Organization access check
+    const sourceWarehouse = await prisma.warehouse.findUnique({
+      where: { id: transfer.sourceWarehouseId },
+    });
+    if (!sourceWarehouse || sourceWarehouse.organizationId !== req.user.organizationId) {
+      return res.status(403).json({ error: 'Tidak memiliki akses' });
+    }
+
     if (transfer.status === 'received') {
       return res.status(409).json({ error: 'Tidak dapat membatalkan transfer yang sudah diterima' });
     }
 
-    await prisma.stockTransfer.update({
-      where: { id: parseInt(req.params.id) },
-      data: { status: 'cancelled' },
-    });
+    // Restore stock if transfer was sent
+    if (transfer.status === 'sent') {
+      await prisma.$transaction(async (tx) => {
+        for (const item of transfer.items) {
+          await tx.warehouseStock.upsert({
+            where: {
+              warehouseId_productId: {
+                warehouseId: transfer.sourceWarehouseId,
+                productId: item.productId,
+              },
+            },
+            update: { quantity: { increment: item.quantity } },
+            create: {
+              warehouseId: transfer.sourceWarehouseId,
+              productId: item.productId,
+              quantity: item.quantity,
+            },
+          });
+
+          const currentStock = await tx.warehouseStock.findUnique({
+            where: {
+              warehouseId_productId: {
+                warehouseId: transfer.sourceWarehouseId,
+                productId: item.productId,
+              },
+            },
+          });
+
+          await tx.inventoryMovement.create({
+            data: {
+              productId: item.productId,
+              warehouseId: transfer.sourceWarehouseId,
+              userId: req.user.id,
+              movementType: 'transfer',
+              quantity: item.quantity,
+              previousStock: currentStock.quantity - item.quantity,
+              currentStock: currentStock.quantity,
+              notes: `Transfer dibatalkan - stok dikembalikan`,
+            },
+          });
+        }
+
+        await tx.stockTransfer.update({
+          where: { id: parseInt(req.params.id) },
+          data: { status: 'cancelled' },
+        });
+      });
+    } else {
+      await prisma.stockTransfer.update({
+        where: { id: parseInt(req.params.id) },
+        data: { status: 'cancelled' },
+      });
+    }
 
     res.json({ message: 'Transfer berhasil dibatalkan' });
   } catch (err) {

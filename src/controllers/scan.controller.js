@@ -90,116 +90,120 @@ export const createScan = async (req, res) => {
       return res.status(404).json({ error: 'Gudang tidak ditemukan' });
     }
 
-    const scan = await prisma.scanSession.create({
-      data: {
-        userId: req.user.id,
-        productId: parseInt(productId),
-        warehouseId: parseInt(warehouseId),
-        detectionProfileId: detectionProfileId ? parseInt(detectionProfileId) : null,
-        scanMode: scanMode || 'photo',
-        transactionType,
-        detectedCount: parseInt(detectedCount) || 0,
-        confirmedCount: parseInt(confirmedCount) || 0,
-        processingTimeMs: parseInt(processingTimeMs) || 0,
-        imageQuality: imageQuality || null,
-        deviceType: deviceType || null,
-        browser: browser || null,
-        correctionReason: correctionReason || null,
-        syncStatus: 'synced',
-      },
+    // Wrap scan creation + stock update in a transaction
+    const scan = await prisma.$transaction(async (tx) => {
+      const scanSession = await tx.scanSession.create({
+        data: {
+          userId: req.user.id,
+          productId: parseInt(productId),
+          warehouseId: parseInt(warehouseId),
+          detectionProfileId: detectionProfileId ? parseInt(detectionProfileId) : null,
+          scanMode: scanMode || 'photo',
+          transactionType,
+          detectedCount: parseInt(detectedCount) || 0,
+          confirmedCount: parseInt(confirmedCount) || 0,
+          processingTimeMs: parseInt(processingTimeMs) || 0,
+          imageQuality: imageQuality || null,
+          deviceType: deviceType || null,
+          browser: browser || null,
+          correctionReason: correctionReason || null,
+          syncStatus: 'synced',
+        },
+      });
+
+      // Update stock based on transaction type
+      if (confirmedCount > 0) {
+        const qty = parseInt(confirmedCount);
+
+        if (transactionType === 'stock_in') {
+          const currentStock = await tx.warehouseStock.upsert({
+            where: {
+              warehouseId_productId: {
+                warehouseId: parseInt(warehouseId),
+                productId: parseInt(productId),
+              },
+            },
+            update: { quantity: { increment: qty } },
+            create: {
+              warehouseId: parseInt(warehouseId),
+              productId: parseInt(productId),
+              quantity: qty,
+            },
+          });
+
+          const previousStock = currentStock.quantity - qty;
+
+          await tx.inventoryMovement.create({
+            data: {
+              productId: parseInt(productId),
+              warehouseId: parseInt(warehouseId),
+              scanSessionId: scanSession.id,
+              userId: req.user.id,
+              movementType: 'stock_in',
+              quantity: qty,
+              previousStock,
+              currentStock: currentStock.quantity,
+              notes: `Scan result - ${scanMode} mode`,
+            },
+          });
+        } else if (transactionType === 'stock_out') {
+          const currentStock = await tx.warehouseStock.findUnique({
+            where: {
+              warehouseId_productId: {
+                warehouseId: parseInt(warehouseId),
+                productId: parseInt(productId),
+              },
+            },
+          });
+
+          if (!currentStock || currentStock.quantity < qty) {
+            throw new Error(`Stok tidak cukup. Tersedia: ${currentStock?.quantity || 0}`);
+          }
+
+          await tx.warehouseStock.update({
+            where: {
+              warehouseId_productId: {
+                warehouseId: parseInt(warehouseId),
+                productId: parseInt(productId),
+              },
+            },
+            data: { quantity: { decrement: qty } },
+          });
+
+          await tx.inventoryMovement.create({
+            data: {
+              productId: parseInt(productId),
+              warehouseId: parseInt(warehouseId),
+              scanSessionId: scanSession.id,
+              userId: req.user.id,
+              movementType: 'stock_out',
+              quantity: qty,
+              previousStock: currentStock.quantity,
+              currentStock: currentStock.quantity - qty,
+              notes: `Scan result - ${scanMode} mode`,
+            },
+          });
+        }
+      }
+
+      return scanSession;
+    });
+
+    // Fetch the full scan with relations
+    const fullScan = await prisma.scanSession.findUnique({
+      where: { id: scan.id },
       include: {
         product: { select: { name: true, sku: true } },
         warehouse: { select: { name: true } },
       },
     });
 
-    // Update stock based on transaction type
-    if (confirmedCount > 0) {
-      const qty = parseInt(confirmedCount);
-
-      if (transactionType === 'stock_in') {
-        await prisma.warehouseStock.upsert({
-          where: {
-            warehouseId_productId: {
-              warehouseId: parseInt(warehouseId),
-              productId: parseInt(productId),
-            },
-          },
-          update: { quantity: { increment: qty } },
-          create: {
-            warehouseId: parseInt(warehouseId),
-            productId: parseInt(productId),
-            quantity: qty,
-          },
-        });
-
-        const currentStock = await prisma.warehouseStock.findUnique({
-          where: {
-            warehouseId_productId: {
-              warehouseId: parseInt(warehouseId),
-              productId: parseInt(productId),
-            },
-          },
-        });
-
-        await prisma.inventoryMovement.create({
-          data: {
-            productId: parseInt(productId),
-            warehouseId: parseInt(warehouseId),
-            scanSessionId: scan.id,
-            userId: req.user.id,
-            movementType: 'stock_in',
-            quantity: qty,
-            previousStock: currentStock.quantity - qty,
-            currentStock: currentStock.quantity,
-            notes: `Scan result - ${scanMode} mode`,
-          },
-        });
-      } else if (transactionType === 'stock_out') {
-        const currentStock = await prisma.warehouseStock.findUnique({
-          where: {
-            warehouseId_productId: {
-              warehouseId: parseInt(warehouseId),
-              productId: parseInt(productId),
-            },
-          },
-        });
-
-        if (!currentStock || currentStock.quantity < qty) {
-          return res.status(409).json({
-            error: `Stok tidak cukup. Tersedia: ${currentStock?.quantity || 0}`,
-          });
-        }
-
-        await prisma.warehouseStock.update({
-          where: {
-            warehouseId_productId: {
-              warehouseId: parseInt(warehouseId),
-              productId: parseInt(productId),
-            },
-          },
-          data: { quantity: { decrement: qty } },
-        });
-
-        await prisma.inventoryMovement.create({
-          data: {
-            productId: parseInt(productId),
-            warehouseId: parseInt(warehouseId),
-            scanSessionId: scan.id,
-            userId: req.user.id,
-            movementType: 'stock_out',
-            quantity: qty,
-            previousStock: currentStock.quantity,
-            currentStock: currentStock.quantity - qty,
-            notes: `Scan result - ${scanMode} mode`,
-          },
-        });
-      }
-    }
-
-    res.status(201).json({ message: 'Scan berhasil disimpan', scan });
+    res.status(201).json({ message: 'Scan berhasil disimpan', scan: fullScan });
   } catch (err) {
     console.error('Create scan error:', err);
+    if (err.message?.includes('Stok tidak cukup')) {
+      return res.status(409).json({ error: err.message });
+    }
     res.status(500).json({ error: 'Gagal menyimpan scan' });
   }
 };
@@ -259,6 +263,11 @@ export const getScan = async (req, res) => {
 
     if (!scan) {
       return res.status(404).json({ error: 'Scan tidak ditemukan' });
+    }
+
+    // Organization access check
+    if (scan.user.organizationId !== req.user.organizationId) {
+      return res.status(403).json({ error: 'Tidak memiliki akses' });
     }
 
     res.json({ scan });
