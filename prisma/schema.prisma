@@ -1,0 +1,369 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== USERS ====================
+model User {
+  id              Int       @id @default(autoincrement())
+  organizationId  Int?
+  name            String
+  email           String    @unique
+  passwordHash    String    @map("password_hash")
+  role            String    @default("staff") // admin, manager, staff
+  avatarUrl       String?   @map("avatar_url")
+  status          String    @default("active") // active, inactive, suspended
+  lastLoginAt     DateTime? @map("last_login_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+  scanSessions    ScanSession[]
+  inventoryMovements InventoryMovement[]
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+
+  @@index([organizationId], name: "idx_user_org")
+  @@index([email], name: "idx_user_email")
+  @@map("users")
+}
+
+// ==================== ORGANIZATIONS ====================
+model Organization {
+  id        Int      @id @default(autoincrement())
+  name      String
+  logoUrl   String?  @map("logo_url")
+  address   String?
+  phone     String?
+  email     String?
+  timezone  String   @default("Asia/Jakarta")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users         User[]
+  warehouses    Warehouse[]
+  categories    Category[]
+  products      Product[]
+  settings      OrganizationSetting[]
+
+  @@map("organizations")
+}
+
+// ==================== WAREHOUSES ====================
+model Warehouse {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  name           String
+  code           String
+  address        String?
+  managerId      Int?     @map("manager_id")
+  status         String   @default("active") // active, inactive
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  warehouseStocks WarehouseStock[]
+  scanSessions   ScanSession[]
+  inventoryMovements InventoryMovement[]
+  stockOpnames   StockOpname[]
+  sourceTransfers      StockTransfer[] @relation("SourceWarehouse")
+  destinationTransfers StockTransfer[] @relation("DestinationWarehouse")
+
+  @@unique([organizationId, code], name: "idx_warehouse_org_code")
+  @@map("warehouses")
+}
+
+// ==================== CATEGORIES ====================
+model Category {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  name           String
+  code           String
+  description    String?
+  icon           String?
+  status         String   @default("active") // active, inactive
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  products     Product[]
+
+  @@unique([organizationId, code], name: "idx_category_org_code")
+  @@map("categories")
+}
+
+// ==================== PRODUCTS ====================
+model Product {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  categoryId     Int?     @map("category_id")
+  name           String
+  sku            String
+  barcode        String?
+  unit           String   @default("pcs")
+  description    String?
+  imageUrl       String?  @map("image_url")
+  minimumStock   Int      @default(0) @map("minimum_stock")
+  maximumStock   Int      @default(0) @map("maximum_stock")
+  status         String   @default("active") // active, inactive
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization      Organization      @relation(fields: [organizationId], references: [id])
+  category          Category?         @relation(fields: [categoryId], references: [id])
+  warehouseStocks   WarehouseStock[]
+  detectionProfiles DetectionProfile[]
+  scanSessions      ScanSession[]
+  inventoryMovements InventoryMovement[]
+  stockOpnameItems  StockOpnameItem[]
+  stockTransferItems StockTransferItem[]
+
+  @@unique([organizationId, sku], name: "idx_product_org_sku")
+  @@unique([organizationId, barcode], name: "idx_product_org_barcode")
+  @@index([categoryId], name: "idx_product_category")
+  @@map("products")
+}
+
+// ==================== WAREHOUSE STOCKS ====================
+model WarehouseStock {
+  id          Int      @id @default(autoincrement())
+  warehouseId Int      @map("warehouse_id")
+  productId   Int      @map("product_id")
+  quantity    Int      @default(0)
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+  product   Product   @relation(fields: [productId], references: [id])
+
+  @@unique([warehouseId, productId], name: "idx_stock_warehouse_product")
+  @@map("warehouse_stocks")
+}
+
+// ==================== DETECTION PROFILES ====================
+model DetectionProfile {
+  id              Int      @id @default(autoincrement())
+  productId       Int      @map("product_id")
+  name            String
+  detectionType   String   @default("contour") @map("detection_type")
+  colorMode       String   @default("color") @map("color_mode")
+  minArea         Float    @default(0) @map("min_area")
+  maxArea         Float    @default(1000000) @map("max_area")
+  minWidth        Float    @default(0) @map("min_width")
+  maxWidth        Float    @default(10000) @map("max_width")
+  minHeight       Float    @default(0) @map("min_height")
+  maxHeight       Float    @default(10000) @map("max_height")
+  minAspectRatio  Float    @default(0) @map("min_aspect_ratio")
+  maxAspectRatio  Float    @default(10) @map("max_aspect_ratio")
+  minCircularity  Float    @default(0) @map("min_circularity")
+  thresholdMode   String   @default("binary") @map("threshold_mode")
+  thresholdValue  Int      @default(128) @map("threshold_value")
+  blurKernel      Int      @default(5) @map("blur_kernel")
+  morphologyKernel Int     @default(3) @map("morphology_kernel")
+  hsvMin          String?  @map("hsv_min")
+  hsvMax          String?  @map("hsv_max")
+  isActive        Boolean  @default(true) @map("is_active")
+  version         Int      @default(1)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  product      Product       @relation(fields: [productId], references: [id])
+  scanSessions ScanSession[]
+
+  @@index([productId], name: "idx_detection_profile_product")
+  @@map("detection_profiles")
+}
+
+// ==================== SCAN SESSIONS ====================
+model ScanSession {
+  id                  Int      @id @default(autoincrement())
+  userId              Int      @map("user_id")
+  productId           Int      @map("product_id")
+  warehouseId         Int      @map("warehouse_id")
+  detectionProfileId  Int?     @map("detection_profile_id")
+  scanMode            String   @default("photo") @map("scan_mode") // photo, live
+  transactionType     String   @map("transaction_type") // stock_in, stock_out, opname
+  detectedCount       Int      @default(0) @map("detected_count")
+  confirmedCount      Int      @default(0) @map("confirmed_count")
+  processingTimeMs    Int      @default(0) @map("processing_time_ms")
+  imageQuality        String?  @map("image_quality")
+  deviceType          String?  @map("device_type")
+  browser             String?
+  imageUrl            String?  @map("image_url")
+  correctionReason    String?  @map("correction_reason")
+  syncStatus          String   @default("synced") @map("sync_status") // synced, pending, conflict
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  user              User              @relation(fields: [userId], references: [id])
+  product           Product           @relation(fields: [productId], references: [id])
+  warehouse         Warehouse         @relation(fields: [warehouseId], references: [id])
+  detectionProfile  DetectionProfile? @relation(fields: [detectionProfileId], references: [id])
+  inventoryMovements InventoryMovement[]
+
+  @@index([userId], name: "idx_scan_user")
+  @@index([productId], name: "idx_scan_product")
+  @@index([warehouseId], name: "idx_scan_warehouse")
+  @@map("scan_sessions")
+}
+
+// ==================== INVENTORY MOVEMENTS ====================
+model InventoryMovement {
+  id              Int      @id @default(autoincrement())
+  productId       Int      @map("product_id")
+  warehouseId     Int      @map("warehouse_id")
+  scanSessionId   Int?     @map("scan_session_id")
+  userId          Int      @map("user_id")
+  movementType    String   @map("movement_type") // stock_in, stock_out, adjustment, transfer
+  quantity        Int
+  previousStock   Int      @map("previous_stock")
+  currentStock    Int      @map("current_stock")
+  referenceNumber String?  @map("reference_number")
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  product      Product       @relation(fields: [productId], references: [id])
+  warehouse    Warehouse     @relation(fields: [warehouseId], references: [id])
+  scanSession  ScanSession?  @relation(fields: [scanSessionId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
+
+  @@index([productId], name: "idx_movement_product")
+  @@index([warehouseId], name: "idx_movement_warehouse")
+  @@index([userId], name: "idx_movement_user")
+  @@index([createdAt], name: "idx_movement_date")
+  @@map("inventory_movements")
+}
+
+// ==================== STOCK OPNAMES ====================
+model StockOpname {
+  id             Int      @id @default(autoincrement())
+  warehouseId    Int      @map("warehouse_id")
+  name           String
+  status         String   @default("draft") // draft, in_progress, submitted, approved, rejected
+  assignedTo     Int?     @map("assigned_to")
+  approvedBy     Int?     @map("approved_by")
+  startedAt      DateTime? @map("started_at")
+  completedAt    DateTime? @map("completed_at")
+  notes          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  warehouse Warehouse         @relation(fields: [warehouseId], references: [id])
+  items     StockOpnameItem[]
+
+  @@index([warehouseId], name: "idx_opname_warehouse")
+  @@index([status], name: "idx_opname_status")
+  @@map("stock_opnames")
+}
+
+// ==================== STOCK OPNAME ITEMS ====================
+model StockOpnameItem {
+  id               Int      @id @default(autoincrement())
+  stockOpnameId    Int      @map("stock_opname_id")
+  productId        Int      @map("product_id")
+  systemQuantity   Int      @default(0) @map("system_quantity")
+  detectedQuantity Int      @default(0) @map("detected_quantity")
+  confirmedQuantity Int     @default(0) @map("confirmed_quantity")
+  difference       Int      @default(0)
+  reason           String?
+  imageUrl         String?  @map("image_url")
+  status           String   @default("pending") // pending, counted, adjusted
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  stockOpname StockOpname @relation(fields: [stockOpnameId], references: [id])
+  product     Product     @relation(fields: [productId], references: [id])
+
+  @@unique([stockOpnameId, productId], name: "idx_opname_item_product")
+  @@map("stock_opname_items")
+}
+
+// ==================== STOCK TRANSFERS ====================
+model StockTransfer {
+  id                  Int      @id @default(autoincrement())
+  sourceWarehouseId   Int      @map("source_warehouse_id")
+  destinationWarehouseId Int   @map("destination_warehouse_id")
+  status              String   @default("draft") // draft, sent, received, cancelled
+  createdBy           Int      @map("created_by")
+  receivedBy          Int?     @map("received_by")
+  notes               String?
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  sourceWarehouse      Warehouse          @relation("SourceWarehouse", fields: [sourceWarehouseId], references: [id])
+  destinationWarehouse Warehouse          @relation("DestinationWarehouse", fields: [destinationWarehouseId], references: [id])
+  items                StockTransferItem[]
+
+  @@index([sourceWarehouseId], name: "idx_transfer_source")
+  @@index([destinationWarehouseId], name: "idx_transfer_dest")
+  @@index([status], name: "idx_transfer_status")
+  @@map("stock_transfers")
+}
+
+// ==================== STOCK TRANSFER ITEMS ====================
+model StockTransferItem {
+  id              Int      @id @default(autoincrement())
+  stockTransferId Int      @map("stock_transfer_id")
+  productId       Int      @map("product_id")
+  quantity        Int
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  stockTransfer StockTransfer @relation(fields: [stockTransferId], references: [id])
+  product       Product       @relation(fields: [productId], references: [id])
+
+  @@map("stock_transfer_items")
+}
+
+// ==================== NOTIFICATIONS ====================
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  title     String
+  message   String
+  type      String   @default("info") // info, warning, success, error
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId], name: "idx_notification_user")
+  @@index([isRead], name: "idx_notification_read")
+  @@map("notifications")
+}
+
+// ==================== AUDIT LOGS ====================
+model AuditLog {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  action       String
+  resourceType String   @map("resource_type")
+  resourceId   Int?     @map("resource_id")
+  oldData      Json?    @map("old_data")
+  newData      Json?    @map("new_data")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId], name: "idx_audit_user")
+  @@index([resourceType, resourceId], name: "idx_audit_resource")
+  @@index([createdAt], name: "idx_audit_date")
+  @@map("audit_logs")
+}
+
+// ==================== ORGANIZATION SETTINGS ====================
+model OrganizationSetting {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  key            String
+  value          String?
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, key], name: "idx_setting_org_key")
+  @@map("organization_settings")
+}

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <link rel="stylesheet" href="/css/styles.css">
+
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased min-h-screen">
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed left-0 top-0 h-full w-64 bg-white border-r border-slate-200 z-40 transform transition-transform duration-300 lg:translate-x-0 -translate-x-full" data-sidebar>
+      <div class="flex items-center gap-3 px-6 py-5 border-b border-slate-200">
+        <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center">
+          <span class="text-white font-bold text-lg">C</span>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg text-slate-900">Countory</h1>
+          <p class="text-xs text-slate-500">Inventory System</p>
+        </div>
+      </div>
+
+      <nav class="px-4 py-4 space-y-1">
+        <a href="/dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600 transition-colors">
+          <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+          Dashboard
+        </a>
+        <a href="/dashboard/products" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600 transition-colors">
+          <i data-lucide="package" class="w-5 h-5"></i>
+          Produk
+        </a>
+        <a href="/dashboard/categories" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600 transition-colors">
+          <i data-lucide="tags" class="w-5 h-5"></i>
+          Kategori
+        </a>
+        <a href="/dashboard/warehouses" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600 transition-colors">
+          <i data-lucide="warehouse" class="w-5 h-5"></i>
+          Gudang
+        </a>
+        <a href="/dashboard/scan" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-primary-500 to-accent-500 transition-colors">
+          <i data-lucide="scan" class="w-5 h-5"></i>
+          Scan Barang
+        </a>
+
+        <div class="pt-4 pb-2">
+          <p class="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Aktivitas</p>
+        </div>
+        <a href="/dashboard/stock-in" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600 transition-colors">
+          <i data-lucide="package-plus" class="w-5 h-5"></i>
+          Stok Masuk
+        </a>
+        <a href="/dashboard/stock-out" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600 transition-colors">
+          <i data-lucide="package-minus" class="w-5 h-5"></i>
+          Stok Keluar
+        </a>
+        <a href="/dashboard/opname" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600 transition-colors">
+          <i data-lucide="clipboard-check" class="w-5 h-5"></i>
+          Stock Opname
+        </a>
+        <a href="/dashboard/transfers" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600 transition-colors">
+          <i data-lucide="arrow-left-right" class="w-5 h-5"></i>
+          Transfer Stok
+        </a>
+
+        <div class="pt-4 pb-2">
+          <p class="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Lainnya</p>
+        </div>
+        <a href="/dashboard/reports" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600 transition-colors">
+          <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+          Laporan
+        </a>
+        <a href="/dashboard/notifications" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600 transition-colors">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          Notifikasi
+        </a>
+        <a href="/dashboard/settings" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600 transition-colors">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+          Pengaturan
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 lg:ml-64">
+      <!-- Top Bar -->
+      <header class="sticky top-0 z-30 bg-white/80 backdrop-blur-lg border-b border-slate-200">
+        <div class="flex items-center justify-between px-4 lg:px-6 py-3">
+          <button id="sidebarToggle" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+
+          <div class="flex items-center gap-4">
+            <div class="relative hidden md:block">
+              <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+              <input type="text" placeholder="Cari produk, SKU..." class="w-64 pl-10 pr-4 py-2 bg-slate-100 border-0 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all">
+            </div>
+
+            <button class="relative p-2 rounded-lg hover:bg-slate-100 transition-colors">
+              <i data-lucide="bell" class="w-5 h-5 text-slate-600"></i>
+              <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            </button>
+
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-accent-500 rounded-full flex items-center justify-center">
+                <span class="text-white text-sm font-medium"><%= user?.name?.charAt(0) || 'U' %></span>
+              </div>
+              <div class="hidden sm:block">
+                <p class="text-sm font-medium text-slate-900"><%= user?.name || 'User' %></p>
+                <p class="text-xs text-slate-500"><%= user?.role || 'staff' %></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="p-4 lg:p-6">
+        <%- body %>
+      </main>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/js/main.js" defer></script>
+</body>
+</html>

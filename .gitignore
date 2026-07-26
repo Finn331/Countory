@@ -33,5 +33,12 @@ yarn-error.log*
 # Testing
 coverage/
 
+# Prisma
+prisma/migrations/
+
+# Uploads
+uploads/
+
 # Misc
 *.log
+*.sqlite

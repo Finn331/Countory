@@ -1,0 +1,133 @@
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Dashboard</h1>
+      <p class="text-slate-600">Selamat datang di Countory</p>
+    </div>
+    <a href="/dashboard/scan" class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary-500 to-accent-500 text-white font-semibold rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-xl transition-all">
+      <i data-lucide="scan" class="w-5 h-5"></i>
+      Scan Barang
+    </a>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="gsap-reveal bg-white rounded-xl p-6 border border-slate-100 card-hover">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-slate-500">Total Produk</p>
+          <p class="text-2xl font-bold text-slate-900" id="totalProducts">0</p>
+        </div>
+        <div class="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center">
+          <i data-lucide="package" class="w-6 h-6 text-primary-600"></i>
+        </div>
+      </div>
+      <div class="mt-4 flex items-center text-sm">
+        <span class="text-green-500 font-medium">+12%</span>
+        <span class="text-slate-500 ml-2">dari bulan lalu</span>
+      </div>
+    </div>
+
+    <div class="gsap-reveal bg-white rounded-xl p-6 border border-slate-100 card-hover">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-slate-500">Total Stok</p>
+          <p class="text-2xl font-bold text-slate-900" id="totalStock">0</p>
+        </div>
+        <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+          <i data-lucide="boxes" class="w-6 h-6 text-green-600"></i>
+        </div>
+      </div>
+      <div class="mt-4 flex items-center text-sm">
+        <span class="text-green-500 font-medium">+5%</span>
+        <span class="text-slate-500 ml-2">dari bulan lalu</span>
+      </div>
+    </div>
+
+    <div class="gsap-reveal bg-white rounded-xl p-6 border border-slate-100 card-hover">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-slate-500">Stok Masuk</p>
+          <p class="text-2xl font-bold text-slate-900" id="stockIn">0</p>
+        </div>
+        <div class="w-12 h-12 bg-accent-100 rounded-xl flex items-center justify-center">
+          <i data-lucide="package-plus" class="w-6 h-6 text-accent-600"></i>
+        </div>
+      </div>
+      <div class="mt-4 flex items-center text-sm">
+        <span class="text-green-500 font-medium">+23%</span>
+        <span class="text-slate-500 ml-2">dari bulan lalu</span>
+      </div>
+    </div>
+
+    <div class="gsap-reveal bg-white rounded-xl p-6 border border-slate-100 card-hover">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-slate-500">Total Scan</p>
+          <p class="text-2xl font-bold text-slate-900" id="totalScans">0</p>
+        </div>
+        <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+          <i data-lucide="scan" class="w-6 h-6 text-yellow-600"></i>
+        </div>
+      </div>
+      <div class="mt-4 flex items-center text-sm">
+        <span class="text-green-500 font-medium">+18%</span>
+        <span class="text-slate-500 ml-2">dari bulan lalu</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <a href="/dashboard/stock-in" class="gsap-reveal group bg-white rounded-xl p-6 border border-slate-100 card-hover">
+      <div class="flex items-center gap-4">
+        <div class="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center group-hover:bg-green-500 transition-colors">
+          <i data-lucide="package-plus" class="w-7 h-7 text-green-600 group-hover:text-white transition-colors"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-900">Stok Masuk</h3>
+          <p class="text-sm text-slate-500">Catat barang masuk</p>
+        </div>
+      </div>
+    </a>
+
+    <a href="/dashboard/stock-out" class="gsap-reveal group bg-white rounded-xl p-6 border border-slate-100 card-hover">
+      <div class="flex items-center gap-4">
+        <div class="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center group-hover:bg-red-500 transition-colors">
+          <i data-lucide="package-minus" class="w-7 h-7 text-red-600 group-hover:text-white transition-colors"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-900">Stok Keluar</h3>
+          <p class="text-sm text-slate-500">Catat barang keluar</p>
+        </div>
+      </div>
+    </a>
+
+    <a href="/dashboard/opname" class="gsap-reveal group bg-white rounded-xl p-6 border border-slate-100 card-hover">
+      <div class="flex items-center gap-4">
+        <div class="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-500 transition-colors">
+          <i data-lucide="clipboard-check" class="w-7 h-7 text-purple-600 group-hover:text-white transition-colors"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-900">Stock Opname</h3>
+          <p class="text-sm text-slate-500">OPname dengan kamera</p>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="bg-white rounded-xl border border-slate-100">
+    <div class="px-6 py-4 border-b border-slate-100">
+      <h2 class="font-bold text-slate-900">Aktivitas Terakhir</h2>
+    </div>
+    <div class="p-6">
+      <div class="text-center py-8">
+        <i data-lucide="inbox" class="w-12 h-12 text-slate-300 mx-auto mb-4"></i>
+        <p class="text-slate-500">Belum ada aktivitas</p>
+        <p class="text-sm text-slate-400 mt-1">Mulai dengan scan barang atau catat stok masuk/keluar</p>
+      </div>
+    </div>
+  </div>
+</div>
