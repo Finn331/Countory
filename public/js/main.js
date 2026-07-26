@@ -5,6 +5,13 @@ document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
   }
 
+  // Register Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+      .then((reg) => console.log('SW registered:', reg.scope))
+      .catch((err) => console.error('SW registration failed:', err));
+  }
+
   // Register ScrollTrigger
   if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
     gsap.registerPlugin(ScrollTrigger);
@@ -164,9 +171,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==================== API Helper ====================
   window.api = {
     async get(url) {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error((await res.json()).error || 'Request failed');
-      return res.json();
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error((await res.json()).error || 'Request failed');
+        return res.json();
+      } catch (err) {
+        if (!navigator.onLine) {
+          showToast('Anda sedang offline. Beberapa fitur mungkin terbatas.', 'warning');
+        }
+        throw err;
+      }
     },
     async post(url, data) {
       const res = await fetch(url, {
@@ -200,5 +214,31 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!res.ok) throw new Error((await res.json()).error || 'Request failed');
       return res.json();
     },
+  };
+
+  // ==================== Offline Detection ====================
+  window.addEventListener('online', () => {
+    showToast('Koneksi pulih. Menyinkronkan data...', 'success');
+    syncPendingData();
+  });
+
+  window.addEventListener('offline', () => {
+    showToast('Anda sedang offline. Data akan disinkronkan saat online.', 'warning');
+  });
+
+  async function syncPendingData() {
+    if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.sync.register('sync-scans');
+    }
+  }
+
+  // ==================== Notification Permission ====================
+  window.requestNotificationPermission = async () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      const permission = await Notification.requestPermission();
+      return permission === 'granted';
+    }
+    return false;
   };
 });

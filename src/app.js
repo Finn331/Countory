@@ -105,6 +105,12 @@ import productRoutes from './routes/product.routes.js';
 import categoryRoutes from './routes/category.routes.js';
 import warehouseRoutes from './routes/warehouse.routes.js';
 import inventoryRoutes from './routes/inventory.routes.js';
+import scanRoutes from './routes/scan.routes.js';
+import detectionRoutes from './routes/detection.routes.js';
+import opnameRoutes from './routes/opname.routes.js';
+import transferRoutes from './routes/transfer.routes.js';
+import adminRoutes from './routes/admin.routes.js';
+import reportRoutes from './routes/report.routes.js';
 
 app.get('/', (req, res) => {
   res.render('pages/landing', {
@@ -119,6 +125,12 @@ app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/warehouses', warehouseRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/scans', scanRoutes);
+app.use('/api/detection-profiles', detectionRoutes);
+app.use('/api/stock-opnames', opnameRoutes);
+app.use('/api/transfers', transferRoutes);
+app.use('/api', adminRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Dashboard Routes
 app.use('/dashboard', dashboardRoutes);
