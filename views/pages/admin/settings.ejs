@@ -1,0 +1,78 @@
+<div class="space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900">Pengaturan</h1>
+    <p class="text-slate-600">Pengaturan aplikasi dan akun</p>
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-6">
+    <!-- Profile -->
+    <div class="bg-white rounded-xl border border-slate-100 p-6">
+      <h2 class="font-bold text-slate-900 mb-4">Profil</h2>
+      <div class="space-y-4">
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 bg-gradient-to-br from-primary-500 to-accent-500 rounded-full flex items-center justify-center">
+            <span class="text-white text-2xl font-bold" id="userInitial">U</span>
+          </div>
+          <div>
+            <p class="font-bold text-slate-900" id="userName">User</p>
+            <p class="text-sm text-slate-500" id="userRole">staff</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- App Info -->
+    <div class="bg-white rounded-xl border border-slate-100 p-6">
+      <h2 class="font-bold text-slate-900 mb-4">Informasi Aplikasi</h2>
+      <div class="space-y-3">
+        <div class="flex justify-between">
+          <span class="text-slate-600">Versi</span>
+          <span class="font-medium text-slate-900">1.0.0</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-600">Lingkungan</span>
+          <span class="font-medium text-slate-900"><%= process.env.NODE_ENV || 'development' %></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="bg-white rounded-xl border border-red-200 p-6 md:col-span-2">
+      <h2 class="font-bold text-red-600 mb-4">Zona Bahaya</h2>
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="font-medium text-slate-900">Keluar dari Akun</p>
+          <p class="text-sm text-slate-500">Anda akan dialihkan ke halaman login</p>
+        </div>
+        <button onclick="logout()" class="px-4 py-2 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-colors">
+          Keluar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function loadProfile() {
+  try {
+    const res = await api.get('/api/auth/me');
+    const user = res.user;
+    document.getElementById('userName').textContent = user.name;
+    document.getElementById('userRole').textContent = user.role;
+    document.getElementById('userInitial').textContent = user.name.charAt(0);
+  } catch (err) {
+    console.error('Load profile error:', err);
+  }
+}
+
+async function logout() {
+  try {
+    await api.post('/api/auth/logout');
+    window.location.href = '/login';
+  } catch (err) {
+    window.location.href = '/login';
+  }
+}
+
+loadProfile();
+</script>

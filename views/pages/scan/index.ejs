@@ -1,0 +1,344 @@
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Scan Barang</h1>
+      <p class="text-slate-600">Hitung barang menggunakan kamera</p>
+    </div>
+  </div>
+
+  <!-- Camera Section -->
+  <div class="grid lg:grid-cols-2 gap-6">
+    <!-- Camera View -->
+    <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+      <div class="p-4 border-b border-slate-100">
+        <div class="flex items-center justify-between">
+          <h2 class="font-bold text-slate-900">Kamera</h2>
+          <div class="flex gap-2">
+            <select id="cameraSelect" class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500">
+              <option>Pilih kamera...</option>
+            </select>
+            <button onclick="toggleCamera()" id="cameraToggle" class="px-4 py-1.5 bg-primary-500 text-white text-sm font-medium rounded-lg hover:bg-primary-600 transition-colors">
+              Mulai
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="relative aspect-video bg-slate-900">
+        <video id="cameraFeed" class="w-full h-full object-cover" autoplay playsinline></video>
+        <canvas id="detectionCanvas" class="absolute inset-0 w-full h-full"></canvas>
+        <div id="cameraPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-white">
+          <i data-lucide="camera" class="w-16 h-16 mb-4 opacity-50"></i>
+          <p class="text-slate-400">Klik "Mulai" untuk mengaktifkan kamera</p>
+        </div>
+        <div id="detectionOverlay" class="absolute bottom-4 left-4 right-4 hidden">
+          <div class="glass-dark rounded-xl p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-slate-300">Hasil Deteksi</p>
+                <p class="text-3xl font-bold text-white" id="detectedCount">0</p>
+              </div>
+              <div class="text-right">
+                <p class="text-sm text-slate-300">FPS</p>
+                <p class="text-lg font-mono text-green-400" id="fpsCounter">0</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings & Results -->
+    <div class="space-y-4">
+      <!-- Product Selection -->
+      <div class="bg-white rounded-xl border border-slate-100 p-4">
+        <h3 class="font-bold text-slate-900 mb-3">Produk</h3>
+        <select id="productSelect" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500">
+          <option value="">Pilih produk...</option>
+        </select>
+      </div>
+
+      <!-- Warehouse Selection -->
+      <div class="bg-white rounded-xl border border-slate-100 p-4">
+        <h3 class="font-bold text-slate-900 mb-3">Gudang</h3>
+        <select id="warehouseSelect" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500">
+          <option value="">Pilih gudang...</option>
+        </select>
+      </div>
+
+      <!-- Scan Mode -->
+      <div class="bg-white rounded-xl border border-slate-100 p-4">
+        <h3 class="font-bold text-slate-900 mb-3">Mode Scan</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <button onclick="setScanMode('photo')" id="modePhoto" class="px-4 py-3 border-2 border-primary-500 bg-primary-50 text-primary-700 font-medium rounded-xl transition-colors">
+            <i data-lucide="camera" class="w-5 h-5 mx-auto mb-1"></i>
+            Foto
+          </button>
+          <button onclick="setScanMode('live')" id="modeLive" class="px-4 py-3 border-2 border-slate-200 text-slate-600 font-medium rounded-xl hover:border-primary-300 transition-colors">
+            <i data-lucide="video" class="w-5 h-5 mx-auto mb-1"></i>
+            Live
+          </button>
+        </div>
+      </div>
+
+      <!-- Transaction Type -->
+      <div class="bg-white rounded-xl border border-slate-100 p-4">
+        <h3 class="font-bold text-slate-900 mb-3">Jenis Transaksi</h3>
+        <select id="transactionType" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500">
+          <option value="stock_in">Stok Masuk</option>
+          <option value="stock_out">Stok Keluar</option>
+          <option value="opname">Stock Opname</option>
+        </select>
+      </div>
+
+      <!-- Capture Button -->
+      <button onclick="captureAndCount()" id="captureBtn" class="w-full py-4 bg-gradient-to-r from-primary-500 to-accent-500 text-white font-bold rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+        <i data-lucide="scan" class="w-6 h-6 mx-auto mb-1"></i>
+        Ambil Gambar & Hitung
+      </button>
+
+      <!-- Result -->
+      <div id="resultCard" class="hidden bg-white rounded-xl border border-slate-100 p-4">
+        <h3 class="font-bold text-slate-900 mb-3">Hasil</h3>
+        <div class="text-center py-4">
+          <p class="text-5xl font-bold text-primary-600" id="resultCount">0</p>
+          <p class="text-slate-500 mt-2">Barang terdeteksi</p>
+        </div>
+        <div class="flex gap-3 mt-4">
+          <button onclick="confirmCount()" class="flex-1 py-3 bg-green-500 text-white font-medium rounded-xl hover:bg-green-600 transition-colors">
+            Konfirmasi
+          </button>
+          <button onclick="retakePhoto()" class="flex-1 py-3 border border-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-50 transition-colors">
+            Ulangi
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Scans -->
+  <div class="bg-white rounded-xl border border-slate-100">
+    <div class="px-6 py-4 border-b border-slate-100">
+      <h2 class="font-bold text-slate-900">Scan Terakhir</h2>
+    </div>
+    <div class="p-6">
+      <div id="recentScans" class="text-center py-8">
+        <i data-lucide="scan" class="w-12 h-12 text-slate-300 mx-auto mb-4"></i>
+        <p class="text-slate-500">Belum ada scan</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let stream = null;
+let scanMode = 'photo';
+let isLiveRunning = false;
+let animationFrame = null;
+
+async function init() {
+  await loadProducts();
+  await loadWarehouses();
+  detectCameras();
+}
+
+async function loadProducts() {
+  try {
+    const res = await api.get('/api/products?limit=100');
+    const select = document.getElementById('productSelect');
+    select.innerHTML = '<option value="">Pilih produk...</option>' +
+      res.products.map(p => `<option value="${p.id}">${p.name} (${p.sku})</option>`).join('');
+  } catch (err) {
+    console.error('Load products error:', err);
+  }
+}
+
+async function loadWarehouses() {
+  try {
+    const res = await api.get('/api/warehouses');
+    const select = document.getElementById('warehouseSelect');
+    select.innerHTML = '<option value="">Pilih gudang...</option>' +
+      res.warehouses.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+  } catch (err) {
+    console.error('Load warehouses error:', err);
+  }
+}
+
+async function detectCameras() {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const cameras = devices.filter(d => d.kind === 'videoinput');
+    const select = document.getElementById('cameraSelect');
+    select.innerHTML = cameras.map((c, i) =>
+      `<option value="${c.deviceId}">${c.label || `Kamera ${i + 1}`}</option>`
+    ).join('');
+  } catch (err) {
+    console.error('Detect cameras error:', err);
+  }
+}
+
+async function toggleCamera() {
+  if (stream) {
+    stopCamera();
+  } else {
+    await startCamera();
+  }
+}
+
+async function startCamera() {
+  try {
+    const deviceId = document.getElementById('cameraSelect').value;
+    const constraints = {
+      video: {
+        deviceId: deviceId ? { exact: deviceId } : undefined,
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
+    };
+
+    stream = await navigator.mediaDevices.getUserMedia(constraints);
+    const video = document.getElementById('cameraFeed');
+    video.srcObject = stream;
+
+    document.getElementById('cameraPlaceholder').classList.add('hidden');
+    document.getElementById('detectionOverlay').classList.remove('hidden');
+    document.getElementById('cameraToggle').textContent = 'Stop';
+    document.getElementById('captureBtn').disabled = false;
+
+    if (scanMode === 'live') {
+      startLiveDetection();
+    }
+  } catch (err) {
+    console.error('Start camera error:', err);
+    showToast('Tidak dapat mengakses kamera', 'error');
+  }
+}
+
+function stopCamera() {
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+  if (animationFrame) {
+    cancelAnimationFrame(animationFrame);
+    animationFrame = null;
+  }
+  document.getElementById('cameraFeed').srcObject = null;
+  document.getElementById('cameraPlaceholder').classList.remove('hidden');
+  document.getElementById('detectionOverlay').classList.add('hidden');
+  document.getElementById('cameraToggle').textContent = 'Mulai';
+  document.getElementById('captureBtn').disabled = true;
+  isLiveRunning = false;
+}
+
+function setScanMode(mode) {
+  scanMode = mode;
+  document.getElementById('modePhoto').className = mode === 'photo'
+    ? 'px-4 py-3 border-2 border-primary-500 bg-primary-50 text-primary-700 font-medium rounded-xl transition-colors'
+    : 'px-4 py-3 border-2 border-slate-200 text-slate-600 font-medium rounded-xl hover:border-primary-300 transition-colors';
+  document.getElementById('modeLive').className = mode === 'live'
+    ? 'px-4 py-3 border-2 border-primary-500 bg-primary-50 text-primary-700 font-medium rounded-xl transition-colors'
+    : 'px-4 py-3 border-2 border-slate-200 text-slate-600 font-medium rounded-xl hover:border-primary-300 transition-colors';
+
+  if (stream) {
+    if (mode === 'live') {
+      startLiveDetection();
+    } else {
+      isLiveRunning = false;
+    }
+  }
+}
+
+function startLiveDetection() {
+  isLiveRunning = true;
+  const video = document.getElementById('cameraFeed');
+  const canvas = document.getElementById('detectionCanvas');
+  const ctx = canvas.getContext('2d');
+  let lastTime = performance.now();
+  let frameCount = 0;
+
+  function detect() {
+    if (!isLiveRunning) return;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+
+    // Simple motion detection simulation
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+
+    // Count bright pixels as a simple detection method
+    let brightPixels = 0;
+    for (let i = 0; i < data.length; i += 16) {
+      const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+      if (brightness > 150) brightPixels++;
+    }
+
+    const detected = Math.floor(brightPixels / 500);
+    document.getElementById('detectedCount').textContent = detected;
+
+    // FPS calculation
+    frameCount++;
+    const now = performance.now();
+    if (now - lastTime >= 1000) {
+      document.getElementById('fpsCounter').textContent = frameCount;
+      frameCount = 0;
+      lastTime = now;
+    }
+
+    animationFrame = requestAnimationFrame(detect);
+  }
+
+  detect();
+}
+
+async function captureAndCount() {
+  const video = document.getElementById('cameraFeed');
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+
+  // Simulate detection (in real app, this would use OpenCV)
+  const detected = parseInt(document.getElementById('detectedCount').textContent) || Math.floor(Math.random() * 20) + 1;
+
+  document.getElementById('resultCount').textContent = detected;
+  document.getElementById('resultCard').classList.remove('hidden');
+}
+
+async function confirmCount() {
+  const productId = document.getElementById('productSelect').value;
+  const warehouseId = document.getElementById('warehouseSelect').value;
+  const transactionType = document.getElementById('transactionType').value;
+  const count = parseInt(document.getElementById('resultCount').textContent);
+
+  if (!productId || !warehouseId) {
+    showToast('Pilih produk dan gudang terlebih dahulu', 'error');
+    return;
+  }
+
+  try {
+    const endpoint = transactionType === 'stock_in' ? '/api/inventory/stock-in' :
+                     transactionType === 'stock_out' ? '/api/inventory/stock-out' :
+                     '/api/inventory/adjustment';
+
+    const payload = transactionType === 'adjustment'
+      ? { productId, warehouseId, newQuantity: count, notes: 'Scan result' }
+      : { productId, warehouseId, quantity: count, notes: 'Scan result' };
+
+    await api.post(endpoint, payload);
+    showToast('Stok berhasil diperbarui', 'success');
+    document.getElementById('resultCard').classList.add('hidden');
+  } catch (err) {
+    showToast(err.message || 'Gagal memperbarui stok', 'error');
+  }
+}
+
+function retakePhoto() {
+  document.getElementById('resultCard').classList.add('hidden');
+}
+
+init();
+</script>
